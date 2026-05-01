@@ -72,8 +72,8 @@ html, body {
 
 /* ── Header ───────────────────────────────────── */
 .header {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  background: #FFFFFF;
+  border-bottom: 1px solid #E5E9F0;
   padding: 0 24px;
   height: 58px;
   display: flex;
@@ -82,15 +82,16 @@ html, body {
   flex-shrink: 0;
   position: relative;
   z-index: 1000;
+  box-shadow: 0 1px 12px rgba(0,0,0,0.08);
 }
 
 .header::before {
   content: '';
   position: absolute;
   bottom: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--cyan), var(--coral), transparent);
-  opacity: 0.5;
+  height: 2px;
+  background: linear-gradient(90deg, var(--cyan), var(--coral));
+  opacity: 0.9;
 }
 
 .header-left {
@@ -124,14 +125,14 @@ html, body {
   font-family: var(--font-display);
   font-size: 22px;
   letter-spacing: 3px;
-  color: var(--text);
+  color: #0D1117;
   line-height: 1;
 }
 
 .logo-sub {
   font-family: var(--font-mono);
   font-size: 9px;
-  color: var(--text3);
+  color: #8A9BB0;
   text-transform: uppercase;
   letter-spacing: 2px;
   margin-top: 2px;
@@ -140,7 +141,7 @@ html, body {
 .header-divider {
   width: 1px;
   height: 28px;
-  background: var(--border2);
+  background: #DDE3EE;
 }
 
 .status-bar {
@@ -149,7 +150,7 @@ html, body {
   gap: 6px;
   font-family: var(--font-mono);
   font-size: 10px;
-  color: var(--text3);
+  color: #8A9BB0;
 }
 
 .status-dot {
@@ -1427,7 +1428,63 @@ function copyBriefing() {
 
 // ── Screenshot ─────────────────────────────────────────────────────────────
 function takeScreenshot() {
-  showToast('📸 Right-click map → Save image as…');
+  const now = new Date().toLocaleString('en-IE', {dateStyle:'medium', timeStyle:'short'});
+  const evRows = events.map(ev => {
+    const dA = haversine(OFFICES[0].latlng, ev.latlng);
+    const dB = haversine(OFFICES[1].latlng, ev.latlng);
+    const rA = getRisk(dA), rB = getRisk(dB);
+    return '<tr>' +
+      '<td style="padding:8px 12px;border-bottom:1px solid #eee;font-weight:600;">' + ev.name + (ev.time ? ' — '+ev.time : '') + '</td>' +
+      '<td style="padding:8px 12px;border-bottom:1px solid #eee;color:#888;">' + ev.addr + '</td>' +
+      '<td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center;"><span style="background:' + rA.bg + ';color:' + rA.col + ';padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;">' + dA + 'm · ' + rA.label + '</span></td>' +
+      '<td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center;"><span style="background:' + rB.bg + ';color:' + rB.col + ';padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;">' + dB + 'm · ' + rB.label + '</span></td>' +
+      '</tr>';
+  }).join('');
+
+  const notesHtml = events.filter(e=>e.notes).map(e =>
+    '<div style="margin-top:16px;padding:14px 16px;background:#F7F9FC;border-radius:8px;border-left:3px solid #FF5C3A;">' +
+    '<div style="font-family:monospace;font-size:9px;color:#8A9BB0;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;">Intelligence Notes — ' + e.name + '</div>' +
+    '<div style="font-family:monospace;font-size:11px;color:#333;line-height:1.7;">' + e.notes + '</div></div>'
+  ).join('');
+
+  const win = window.open('', '_blank', 'width=920,height=720');
+  win.document.write('<!DOCTYPE html><html><head><title>SECMAP Briefing</title>' +
+    '<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;500&family=Bebas+Neue&display=swap" rel="stylesheet"/>' +
+    '<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Instrument Sans,sans-serif;background:#fff;color:#0D1117;}' +
+    '.hdr{background:#fff;border-bottom:3px solid;border-image:linear-gradient(90deg,#00D4FF,#FF5C3A) 1;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px rgba(0,0,0,0.08);}' +
+    '.logo{font-family:Bebas Neue,sans-serif;font-size:28px;letter-spacing:3px;color:#0D1117;}' +
+    '.sec{padding:22px 32px;}.sec-t{font-family:monospace;font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#8A9BB0;margin-bottom:12px;}' +
+    '.offices{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}' +
+    '.oc{border:2px solid;border-radius:10px;padding:14px 16px;}' +
+    'table{width:100%;border-collapse:collapse;border:1px solid #eee;border-radius:10px;overflow:hidden;}' +
+    'thead{background:#F7F9FC;}th{padding:10px 12px;text-align:left;font-family:monospace;font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:#8A9BB0;}' +
+    '.ftr{padding:14px 32px;border-top:1px solid #eee;display:flex;justify-content:space-between;align-items:center;}' +
+    '.leg{display:flex;gap:14px;}.leg-i{display:flex;align-items:center;gap:5px;font-size:10px;color:#555;}' +
+    '.leg-d{width:10px;height:10px;border-radius:2px;}' +
+    '.actions{text-align:center;padding:20px;}' +
+    '.pbtn{background:linear-gradient(135deg,#00D4FF,#FF5C3A);color:white;border:none;padding:12px 32px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:1px;}' +
+    '.cbtn{background:#F0F2F5;color:#555;border:none;padding:12px 24px;border-radius:8px;font-size:14px;cursor:pointer;margin-left:10px;}' +
+    '.hint{font-family:monospace;font-size:10px;color:#8A9BB0;margin-top:10px;}' +
+    '@media print{.actions{display:none;}body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}' +
+    '</style></head><body>' +
+    '<div class="hdr"><div><div class="logo">SECMAP</div><div style="font-family:monospace;font-size:10px;color:#8A9BB0;margin-top:2px;letter-spacing:1px;">DUBLIN SECURITY INTELLIGENCE</div></div>' +
+    '<div style="text-align:right;"><div style="font-family:monospace;font-size:11px;font-weight:600;">SECURITY BRIEFING</div><div style="font-family:monospace;font-size:11px;color:#8A9BB0;">' + now + '</div></div></div>' +
+    '<div class="sec"><div class="sec-t">Fixed Office Locations</div>' +
+    '<div class="offices">' +
+    '<div class="oc" style="border-color:#00D4FF;background:rgba(0,212,255,0.04);"><div style="font-size:10px;font-weight:600;color:#00D4FF;letter-spacing:1px;margin-bottom:3px;">OFFICE A</div><div style="font-size:15px;font-weight:700;color:#0088AA;margin-bottom:3px;">5-Hume</div><div style="font-family:monospace;font-size:10px;color:#8A9BB0;">3–8 Hume St, Dublin 2, D02 C624</div></div>' +
+    '<div class="oc" style="border-color:#FF5C3A;background:rgba(255,92,58,0.04);"><div style="font-size:10px;font-weight:600;color:#FF5C3A;letter-spacing:1px;margin-bottom:3px;">OFFICE B</div><div style="font-size:15px;font-weight:700;color:#CC3A1A;margin-bottom:3px;">Styne House</div><div style="font-family:monospace;font-size:10px;color:#8A9BB0;">Hatch St Upper, Saint Kevin's, D02 DY27</div></div>' +
+    '</div>' +
+    '<div class="sec-t">Active Events — Risk Assessment</div>' +
+    (events.length ?
+      '<table><thead><tr><th>Event</th><th>Location</th><th>A · 5-Hume</th><th>B · Styne House</th></tr></thead><tbody>' + evRows + '</tbody></table>' + notesHtml :
+      '<div style="text-align:center;padding:40px;color:#8A9BB0;font-family:monospace;font-size:12px;">No active events</div>') +
+    '</div>' +
+    '<div class="ftr"><div style="font-family:monospace;font-size:10px;color:#8A9BB0;">Avoid protest areas 30 min before listed times · Use Merrion St or Leeson St as alternate routes</div>' +
+    '<div class="leg"><div class="leg-i"><div class="leg-d" style="background:#FF2D55;"></div>Critical</div><div class="leg-i"><div class="leg-d" style="background:#FF9500;"></div>High</div><div class="leg-i"><div class="leg-d" style="background:#34C759;"></div>Moderate</div><div class="leg-i"><div class="leg-d" style="background:#007AFF;"></div>Low</div></div></div>' +
+    '<div class="actions"><button class="pbtn" onclick="window.print()">🖨 Print / Save as PDF</button><button class="cbtn" onclick="window.close()">Close</button><div class="hint">Print → Save as PDF → drag into Slack &nbsp;|&nbsp; or &nbsp;|&nbsp; Win+Shift+S to screenshot this window</div></div>' +
+    '</body></html>');
+  win.document.close();
+  showToast('📋 Briefing opened — print or screenshot');
 }
 
 // ── Pulse animation for event pin ─────────────────────────────────────────
