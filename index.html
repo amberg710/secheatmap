@@ -5,1798 +5,710 @@
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>SECMAP · Dublin Security Intelligence</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300&family=Clash+Display:wght@500;600;700&display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Bebas+Neue&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;0,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
-/* ── Reset & Root ─────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-:root {
-  --bg:       #06080D;
-  --surface:  #0B0F18;
-  --surface2: #10151F;
-  --surface3: #151C29;
-  --border:   #1A2235;
-  --border2:  #243048;
-
-  --text:     #E2EAF4;
-  --text2:    #8DA0B8;
-  --text3:    #4A607A;
-
-  --coral:    #FF5C3A;
-  --coral2:   #FF8266;
-  --cyan:     #00D4FF;
-  --cyan2:    #67E8FF;
-  --gold:     #F4A623;
-  --gold2:    #FFCC70;
-
-  --risk-critical: #FF2D55;
-  --risk-high:     #FF9500;
-  --risk-moderate: #34C759;
-  --risk-low:      #007AFF;
-
-  --hume-col:  #00D4FF;
-  --styne-col: #FF5C3A;
-
-  --font-display: 'Bebas Neue', sans-serif;
-  --font-ui:      'Instrument Sans', sans-serif;
-  --font-mono:    'JetBrains Mono', monospace;
-
-  --radius:   10px;
-  --radius-lg:16px;
-  --shadow:   0 4px 24px rgba(0,0,0,0.6);
-  --shadow-lg:0 8px 48px rgba(0,0,0,0.8);
-  --glow-cyan: 0 0 20px rgba(0,212,255,0.25);
-  --glow-coral:0 0 20px rgba(255,92,58,0.25);
-}
-
-html, body {
-  height: 100%;
-  overflow: hidden;
-  background: var(--bg);
-  color: var(--text);
-  font-family: var(--font-ui);
-  font-size: 14px;
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* ── Scrollbar ────────────────────────────────── */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: var(--surface); }
-::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
-
-/* ── Layout ───────────────────────────────────── */
-.app { display: flex; flex-direction: column; height: 100vh; }
-
-/* ── Header ───────────────────────────────────── */
-.header {
-  background: #FFFFFF;
-  border-bottom: 1px solid #E5E9F0;
-  padding: 0 24px;
-  height: 58px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 1000;
-  box-shadow: 0 1px 12px rgba(0,0,0,0.08);
-}
-
-.header::before {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--cyan), var(--coral));
-  opacity: 0.9;
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.logo-icon {
-  width: 32px;
-  height: 32px;
-  background: linear-gradient(135deg, var(--cyan), var(--coral));
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: var(--font-display);
-  font-size: 16px;
-  color: var(--bg);
-  letter-spacing: 0;
-  flex-shrink: 0;
-}
-
-.logo-text {
-  font-family: var(--font-display);
-  font-size: 22px;
-  letter-spacing: 3px;
-  color: #0D1117;
-  line-height: 1;
-}
-
-.logo-sub {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  color: #8A9BB0;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  margin-top: 2px;
-}
-
-.header-divider {
-  width: 1px;
-  height: 28px;
-  background: #DDE3EE;
-}
-
-.status-bar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: #8A9BB0;
-}
-
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--risk-moderate);
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.office-badge {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 500;
-  border: 1px solid;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.office-badge:hover { opacity: 0.8; }
-.badge-hume  { border-color: var(--hume-col);  color: var(--hume-col);  background: rgba(0,212,255,0.08); }
-.badge-styne { border-color: var(--styne-col); color: var(--styne-col); background: rgba(255,92,58,0.08); }
-
-.badge-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-}
-
-/* ── Body ─────────────────────────────────────── */
-.body {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-}
-
-/* ── Sidebar ──────────────────────────────────── */
-.sidebar {
-  width: 320px;
-  min-width: 320px;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-/* ── Form Panel ───────────────────────────────── */
-.form-panel {
-  padding: 20px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-.panel-heading {
-  font-family: var(--font-display);
-  font-size: 18px;
-  letter-spacing: 2px;
-  color: var(--text);
-  margin-bottom: 4px;
-}
-
-.panel-sub {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  color: var(--text3);
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  margin-bottom: 18px;
-}
-
-.field { margin-bottom: 12px; }
-.field:last-child { margin-bottom: 0; }
-
-.field label {
-  display: block;
-  font-family: var(--font-mono);
-  font-size: 9px;
-  color: var(--text3);
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-  margin-bottom: 6px;
-}
-
-.field input,
-.field textarea,
-.field select {
-  width: 100%;
-  background: var(--bg);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius);
-  padding: 10px 13px;
-  color: var(--text);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  resize: none;
-  appearance: none;
-}
-
-.field input:focus,
-.field textarea:focus,
-.field select:focus {
-  border-color: var(--cyan);
-  box-shadow: 0 0 0 3px rgba(0,212,255,0.08);
-}
-
-.field input::placeholder,
-.field textarea::placeholder {
-  color: var(--text3);
-  font-style: italic;
-}
-
-.field-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.add-btn {
-  width: 100%;
-  margin-top: 14px;
-  padding: 12px 16px;
-  border: none;
-  border-radius: var(--radius);
-  background: linear-gradient(135deg, #C0392B 0%, var(--coral) 100%);
-  color: white;
-  font-family: var(--font-display);
-  font-size: 16px;
-  letter-spacing: 2px;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  position: relative;
-  overflow: hidden;
-}
-
-.add-btn::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.add-btn:hover::after { opacity: 1; }
-.add-btn:hover { transform: translateY(-1px); box-shadow: var(--glow-coral); }
-.add-btn:active { transform: translateY(0); }
-.add-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-
-.spinner {
-  display: none;
-  width: 14px; height: 14px;
-  border: 2px solid rgba(255,255,255,0.3);
-  border-top-color: white;
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-.add-btn.loading .spinner { display: block; }
-.add-btn.loading .btn-label { display: none; }
-
-/* ── Events List ──────────────────────────────── */
-.events-panel {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px 20px;
-}
-
-.events-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-}
-
-.events-title {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  color: var(--text3);
-  text-transform: uppercase;
-  letter-spacing: 1.5px;
-}
-
-.events-count {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--cyan);
-  background: rgba(0,212,255,0.1);
-  border: 1px solid rgba(0,212,255,0.2);
-  padding: 2px 8px;
-  border-radius: 10px;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--text3);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  line-height: 2;
-}
-
-.empty-icon {
-  font-size: 32px;
-  margin-bottom: 12px;
-  opacity: 0.4;
-}
-
-.event-card {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 13px 14px;
-  margin-bottom: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-  position: relative;
-}
-
-.event-card:hover {
-  border-color: var(--border2);
-  background: var(--surface3);
-  transform: translateX(2px);
-}
-
-.event-card-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.event-name {
-  font-family: var(--font-ui);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text);
-  line-height: 1.3;
-}
-
-.event-time {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--risk-critical);
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.event-addr {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text3);
-  margin-bottom: 10px;
-}
-
-.dist-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-}
-
-.dist-chip {
-  border-radius: 7px;
-  padding: 5px 8px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-}
-
-.dist-chip-label {
-  font-size: 9px;
-  opacity: 0.7;
-  margin-bottom: 1px;
-}
-
-.dist-chip-val {
-  font-weight: 600;
-  font-size: 11px;
-}
-
-.dist-chip-risk {
-  font-size: 8px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  margin-top: 1px;
-}
-
-.del-btn {
-  position: absolute;
-  top: 10px; right: 10px;
-  background: none;
-  border: none;
-  color: var(--text3);
-  cursor: pointer;
-  font-size: 13px;
-  opacity: 0;
-  transition: all 0.2s;
-  padding: 2px 5px;
-  border-radius: 4px;
-}
-
-.event-card:hover .del-btn { opacity: 1; }
-.del-btn:hover { color: var(--risk-critical); background: rgba(255,45,85,0.1); }
-
-/* ── Action Bar ───────────────────────────────── */
-.action-bar {
-  padding: 14px 20px;
-  border-top: 1px solid var(--border);
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.act-btn {
-  padding: 9px 6px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border2);
-  background: transparent;
-  color: var(--text2);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-}
-
-.act-btn:hover {
-  border-color: var(--cyan);
-  color: var(--cyan);
-  background: rgba(0,212,255,0.05);
-}
-
-.act-icon { font-size: 14px; }
-
-/* ── Map ──────────────────────────────────────── */
-.map-wrap {
-  flex: 1;
-  position: relative;
-  min-width: 0;
-}
-
-#map {
-  width: 100%;
-  height: 100%;
-}
-
-/* Override Leaflet popup */
-.leaflet-popup-content-wrapper {
-  background: var(--surface2) !important;
-  border: 1px solid var(--border2) !important;
-  border-radius: var(--radius-lg) !important;
-  box-shadow: var(--shadow-lg) !important;
-  padding: 0 !important;
-}
-
-.leaflet-popup-content {
-  margin: 0 !important;
-  font-family: var(--font-ui) !important;
-}
-
-.leaflet-popup-tip {
-  background: var(--surface2) !important;
-}
-
-.leaflet-popup-close-button {
-  color: var(--text3) !important;
-  font-size: 18px !important;
-  padding: 8px 10px !important;
-}
-
-.leaflet-popup-close-button:hover {
-  color: var(--text) !important;
-}
-
-/* ── Map Overlays ─────────────────────────────── */
-.map-overlay {
-  position: absolute;
-  z-index: 800;
-  pointer-events: none;
-}
-
-.overlay-legend {
-  bottom: 20px;
-  right: 16px;
-  background: rgba(6,8,13,0.92);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius-lg);
-  padding: 14px 16px;
-  backdrop-filter: blur(12px);
-  pointer-events: auto;
-  min-width: 160px;
-}
-
-.legend-title {
-  font-family: var(--font-mono);
-  font-size: 8px;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  color: var(--text3);
-  margin-bottom: 10px;
-}
-
-.legend-row {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin-bottom: 6px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text2);
-}
-
-.legend-row:last-child { margin-bottom: 0; }
-
-.leg-swatch {
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-
-.legend-divider {
-  height: 1px;
-  background: var(--border);
-  margin: 8px 0;
-}
-
-.overlay-offices {
-  top: 14px;
-  left: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  pointer-events: auto;
-}
-
-.office-pill {
-  background: rgba(6,8,13,0.92);
-  border: 1.5px solid;
-  border-radius: 9px;
-  padding: 8px 13px;
-  backdrop-filter: blur(12px);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.office-pill:hover { transform: translateX(2px); }
-
-.op-badge {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  opacity: 0.7;
-  margin-bottom: 2px;
-}
-
-.op-name {
-  font-family: var(--font-ui);
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.op-addr {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  opacity: 0.6;
-  margin-top: 1px;
-}
-
-.op-dist-info {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  margin-top: 5px;
-  opacity: 0.8;
-}
-
-/* ── Toast ────────────────────────────────────── */
-.toast {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--surface3);
-  border: 1px solid var(--cyan);
-  border-radius: 100px;
-  padding: 10px 22px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--cyan);
-  z-index: 9999;
-  pointer-events: none;
-  display: none;
-  white-space: nowrap;
-  box-shadow: var(--glow-cyan), var(--shadow);
-}
-
-.toast.show {
-  display: block;
-  animation: toastAnim 2.5s ease forwards;
-}
-
-@keyframes toastAnim {
-  0%   { opacity: 0; transform: translateX(-50%) translateY(8px); }
-  12%  { opacity: 1; transform: translateX(-50%) translateY(0); }
-  80%  { opacity: 1; }
-  100% { opacity: 0; transform: translateX(-50%) translateY(-4px); }
-}
-
-/* ── Popup Styles ─────────────────────────────── */
-.popup-wrap {
-  padding: 16px 18px;
-  min-width: 240px;
-  max-width: 300px;
-}
-
-.popup-title {
-  font-family: var(--font-ui);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text);
-  margin-bottom: 4px;
-}
-
-.popup-addr {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text3);
-  margin-bottom: 12px;
-}
-
-.popup-divider {
-  height: 1px;
-  background: var(--border);
-  margin: 10px 0;
-}
-
-.popup-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 3px 0;
-  font-family: var(--font-mono);
-  font-size: 11px;
-}
-
-.popup-row-label { color: var(--text3); }
-
-.risk-pill {
-  padding: 2px 9px;
-  border-radius: 6px;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-}
-
-.popup-notes {
-  margin-top: 10px;
-  padding: 10px 12px;
-  background: var(--bg);
-  border-radius: 8px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text2);
-  line-height: 1.7;
-  max-height: 100px;
-  overflow-y: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-.popup-office-title {
-  font-family: var(--font-display);
-  font-size: 18px;
-  letter-spacing: 2px;
-  margin-bottom: 3px;
-}
-
-/* ── Animations ───────────────────────────────── */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.event-card {
-  animation: fadeIn 0.25s ease;
-}
-
-/* ── Responsive ───────────────────────────────── */
-@media (max-width: 768px) {
-  .sidebar { width: 100%; min-width: 0; }
-  .body { flex-direction: column; }
-  .map-wrap { height: 60vh; }
-}
-
-/* ── Scan Panel ───────────────────────────────── */
-.scan-btn {
-  width: 100%;
-  padding: 11px 16px;
-  border-radius: var(--radius);
-  border: 1.5px solid var(--cyan);
-  background: rgba(0,212,255,0.06);
-  color: var(--cyan);
-  font-family: var(--font-display);
-  font-size: 15px;
-  letter-spacing: 2px;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-.scan-btn:hover {
-  background: rgba(0,212,255,0.14);
-  box-shadow: var(--glow-cyan);
-  transform: translateY(-1px);
-}
-.scan-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
-.scan-btn.scanning { animation: scanPulse 1s infinite; }
-@keyframes scanPulse {
-  0%,100% { border-color: var(--cyan); }
-  50%      { border-color: var(--cyan2); box-shadow: 0 0 30px rgba(0,212,255,0.4); }
-}
-
-.scan-results { display: flex; flex-direction: column; gap: 8px; }
-
-.scan-card {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--cyan);
-  border-radius: var(--radius);
-  padding: 11px 13px;
-  transition: all 0.2s;
-  animation: fadeIn 0.3s ease;
-}
-.scan-card:hover { border-color: var(--cyan); background: var(--surface3); }
-.scan-card.risk-critical { border-left-color: var(--risk-critical); }
-.scan-card.risk-high     { border-left-color: var(--risk-high); }
-.scan-card.risk-moderate { border-left-color: var(--risk-moderate); }
-.scan-card.risk-low      { border-left-color: var(--risk-low); }
-
-.scan-card-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 5px;
-}
-.scan-card-title {
-  font-family: var(--font-ui);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text);
-  line-height: 1.3;
-}
-.scan-source {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  color: var(--text3);
-  margin-bottom: 5px;
-}
-.scan-summary {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text2);
-  line-height: 1.6;
-  margin-bottom: 8px;
-}
-.scan-actions {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-.scan-link {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  color: var(--cyan);
-  text-decoration: none;
-  padding: 3px 8px;
-  border: 1px solid rgba(0,212,255,0.3);
-  border-radius: 5px;
-  transition: all 0.2s;
-}
-.scan-link:hover { background: rgba(0,212,255,0.1); }
-.scan-add-btn {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  color: var(--bg);
-  background: var(--cyan);
-  border: none;
-  padding: 3px 10px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-weight: 600;
-}
-.scan-add-btn:hover { opacity: 0.85; }
-.scan-add-btn.added {
-  background: var(--risk-moderate);
-  cursor: default;
-}
-.scan-empty {
-  text-align: center;
-  padding: 20px 10px;
-  color: var(--text3);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  line-height: 1.8;
-}
-.scan-timestamp {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  color: var(--text3);
-  text-align: center;
-  margin-bottom: 10px;
-}
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#05070E;--s1:#0B0F1A;--s2:#101828;--s3:#141D2E;
+  --b1:#1A2640;--b2:#243356;
+  --tx:#E0EAF8;--t2:#8DAAC8;--t3:#3D5470;
+  --cy:#00D4FF;--co:#FF5C3A;--go:#F4A623;
+  --rc:#FF2D55;--rh:#FF9500;--rm:#34C759;--rl:#007AFF;
+  --ha:#00D4FF;--hb:#FF5C3A;
+  --r:10px;--rl2:16px;
+}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font-family:'Instrument Sans',sans-serif;-webkit-font-smoothing:antialiased;}
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-track{background:var(--s1);}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:3px;}
+
+/* ── LAYOUT ── */
+.app{display:flex;flex-direction:column;height:100vh;}
+.body{display:flex;flex:1;min-height:0;overflow:hidden;}
+
+/* ── HEADER ── */
+.hdr{
+  background:#fff;border-bottom:1px solid #E0E8F0;
+  padding:0 20px;height:54px;display:flex;align-items:center;
+  justify-content:space-between;flex-shrink:0;position:relative;z-index:1000;
+  box-shadow:0 2px 16px rgba(0,0,0,0.10);
+}
+.hdr::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2.5px;background:linear-gradient(90deg,#00D4FF,#FF5C3A,#F4A623);}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:32px;height:32px;background:linear-gradient(135deg,#00D4FF,#FF5C3A);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:16px;color:#fff;letter-spacing:0;box-shadow:0 2px 8px rgba(0,212,255,0.3);}
+.logo-name{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:#0D1117;line-height:1;}
+.logo-sub{font-family:'JetBrains Mono',monospace;font-size:8px;color:#8A9BB0;text-transform:uppercase;letter-spacing:2px;margin-top:1px;}
+.hdiv{width:1px;height:28px;background:#DDE5EE;margin:0 14px;}
+.status-wrap{display:flex;align-items:center;gap:7px;}
+.sdot{width:7px;height:7px;border-radius:50%;background:#34C759;animation:pulse 2s infinite;flex-shrink:0;}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(52,199,89,0.4);}50%{opacity:.7;box-shadow:0 0 0 4px rgba(52,199,89,0);}}
+.stxt{font-family:'JetBrains Mono',monospace;font-size:10px;color:#6A8099;max-width:280px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.obadge{padding:5px 12px;border-radius:20px;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:500;border:1.5px solid;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;}
+.obadge:hover{transform:translateY(-1px);}
+.ba{border-color:var(--ha);color:var(--ha);background:rgba(0,212,255,0.08);}
+.bb{border-color:var(--hb);color:var(--hb);background:rgba(255,92,58,0.08);}
+.hbtn{padding:6px 14px;border-radius:8px;border:1.5px solid var(--b1);background:var(--s1);color:var(--t2);font-family:'JetBrains Mono',monospace;font-size:10px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;}
+.hbtn:hover{border-color:var(--cy);color:var(--cy);}
+.alert-badge{background:var(--rc);color:#fff;font-size:8px;font-weight:700;padding:1px 5px;border-radius:10px;min-width:16px;text-align:center;display:none;}
+.alert-badge.show{display:inline-block;animation:pop .3s ease;}
+@keyframes pop{0%{transform:scale(0);}70%{transform:scale(1.2);}100%{transform:scale(1);}}
+
+/* ── SIDEBAR ── */
+.sidebar{width:320px;min-width:320px;background:var(--s1);border-right:1px solid var(--b1);display:flex;flex-direction:column;overflow:hidden;}
+
+/* ── FORM ── */
+.form-wrap{padding:16px 18px;border-bottom:1px solid var(--b1);flex-shrink:0;}
+.sh{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--tx);margin-bottom:1px;}
+.ss{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:14px;}
+.fl{margin-bottom:10px;}
+.fl label{display:block;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:5px;}
+.inp{width:100%;background:var(--bg);border:1px solid var(--b2);border-radius:var(--r);padding:9px 12px;color:var(--tx);font-family:'JetBrains Mono',monospace;font-size:11px;outline:none;transition:border-color .2s,box-shadow .2s;resize:none;appearance:none;}
+.inp:focus{border-color:var(--cy);box-shadow:0 0 0 3px rgba(0,212,255,0.1);}
+.inp::placeholder{color:var(--t3);font-style:italic;}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.add-btn{width:100%;margin-top:12px;padding:12px;border:none;border-radius:var(--r);background:linear-gradient(135deg,#C0392B,#FF5C3A);color:#fff;font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;position:relative;overflow:hidden;}
+.add-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.1),transparent);opacity:0;transition:opacity .2s;}
+.add-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(255,92,58,.4);}
+.add-btn:hover::before{opacity:1;}
+.add-btn:active{transform:none;}
+.add-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+.spin{display:none;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.add-btn.loading .spin{display:block;}
+.add-btn.loading .lbl{display:none;}
+
+/* ── EVENTS PANEL ── */
+.ev-panel{flex:1;overflow-y:auto;padding:14px 18px;}
+.ev-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.ev-title{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:1.5px;}
+.ev-ct{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--cy);background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.2);padding:2px 9px;border-radius:10px;}
+.empty{text-align:center;padding:36px 16px;color:var(--t3);font-family:'JetBrains Mono',monospace;font-size:11px;line-height:2.2;}
+.ecard{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);padding:12px 13px;margin-bottom:8px;cursor:pointer;transition:all .2s;position:relative;animation:fadeUp .25s ease;}
+.ecard:hover{border-color:var(--b2);background:var(--s3);transform:translateX(3px);}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+.ec-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:3px;}
+.ec-name{font-size:12px;font-weight:600;color:var(--tx);line-height:1.3;}
+.ec-time{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--rc);font-weight:600;flex-shrink:0;}
+.ec-addr{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3);margin-bottom:9px;}
+.dc-row{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.dc{border-radius:7px;padding:5px 8px;font-family:'JetBrains Mono',monospace;}
+.dc-lbl{font-size:8px;opacity:.7;margin-bottom:1px;}
+.dc-val{font-weight:600;font-size:11px;}
+.dc-r{font-size:8px;font-weight:700;letter-spacing:.5px;margin-top:1px;}
+.del{position:absolute;top:9px;right:9px;background:none;border:none;color:var(--t3);cursor:pointer;font-size:12px;opacity:0;transition:all .2s;padding:3px 6px;border-radius:4px;}
+.ecard:hover .del{opacity:1;}
+.del:hover{color:var(--rc);background:rgba(255,45,85,.1);}
+
+/* ── ACTION BAR ── */
+.act-bar{padding:12px 18px;border-top:1px solid var(--b1);display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;flex-shrink:0;}
+.abt{padding:10px 6px;border-radius:var(--r);border:1px solid var(--b2);background:transparent;color:var(--t2);font-family:'JetBrains Mono',monospace;font-size:10px;cursor:pointer;transition:all .2s;text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.abt:hover{border-color:var(--cy);color:var(--cy);background:rgba(0,212,255,.05);}
+.abt-icon{font-size:14px;}
+
+/* ── MAP ── */
+.map-wrap{flex:1;position:relative;min-width:0;}
+#map{width:100%;height:100%;}
+
+/* ── LEAFLET POPUP ── */
+.leaflet-popup-content-wrapper{background:var(--s2)!important;border:1px solid var(--b2)!important;border-radius:var(--rl2)!important;box-shadow:0 8px 32px rgba(0,0,0,.8)!important;padding:0!important;}
+.leaflet-popup-content{margin:0!important;}
+.leaflet-popup-tip{background:var(--s2)!important;}
+.leaflet-popup-close-button{color:var(--t3)!important;padding:8px 10px!important;font-size:16px!important;}
+.leaflet-popup-close-button:hover{color:var(--tx)!important;}
+
+/* ── MAP OVERLAYS ── */
+.mov{position:absolute;z-index:800;}
+.ov-off{top:14px;left:14px;display:flex;flex-direction:column;gap:7px;}
+.opill{background:rgba(5,7,14,.93);border:1.5px solid;border-radius:10px;padding:9px 13px;backdrop-filter:blur(12px);cursor:pointer;transition:all .2s;min-width:148px;}
+.opill:hover{transform:translateX(3px);}
+.op-badge{font-family:'JetBrains Mono',monospace;font-size:8px;text-transform:uppercase;letter-spacing:1px;opacity:.7;margin-bottom:2px;}
+.op-name{font-family:'Instrument Sans',sans-serif;font-size:13px;font-weight:700;}
+.op-addr{font-family:'JetBrains Mono',monospace;font-size:8px;opacity:.5;margin-top:1px;}
+.op-dist{font-family:'JetBrains Mono',monospace;font-size:9px;margin-top:5px;}
+.ov-leg{bottom:18px;right:14px;background:rgba(5,7,14,.93);border:1px solid var(--b2);border-radius:var(--rl2);padding:13px 15px;backdrop-filter:blur(12px);}
+.leg-t{font-family:'JetBrains Mono',monospace;font-size:8px;text-transform:uppercase;letter-spacing:2px;color:var(--t3);margin-bottom:9px;}
+.leg-r{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t2);}
+.leg-r:last-child{margin-bottom:0;}
+.leg-s{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+.leg-div{height:1px;background:var(--b1);margin:7px 0;}
+
+/* ── POPUP CONTENT ── */
+.pu{padding:15px 18px;min-width:240px;max-width:300px;}
+.pu-title{font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:1.5px;margin-bottom:3px;}
+.pu-addr{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t3);margin-bottom:10px;}
+.pu-div{height:1px;background:var(--b1);margin:8px 0;}
+.pu-sec{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:7px;}
+.pu-row{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-family:'JetBrains Mono',monospace;font-size:11px;}
+.pu-lbl{color:var(--t3);}
+.rp{padding:2px 8px;border-radius:5px;font-size:9px;font-weight:700;}
+.pu-notes{margin-top:9px;padding:9px 11px;background:var(--bg);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t2);line-height:1.7;max-height:90px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;}
+
+/* ── ALERT DRAWER ── */
+.drawer{position:fixed;top:54px;right:0;width:350px;height:calc(100vh - 54px);background:var(--s1);border-left:1px solid var(--b1);z-index:900;display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);box-shadow:-8px 0 40px rgba(0,0,0,.6);}
+.drawer.open{transform:translateX(0);}
+.dr-hdr{padding:16px 18px;border-bottom:1px solid var(--b1);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.dr-title{font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:2px;color:var(--tx);}
+.dr-sub{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--t3);margin-top:2px;}
+.dr-close{background:none;border:none;color:var(--t3);cursor:pointer;font-size:20px;line-height:1;padding:4px;}
+.dr-close:hover{color:var(--tx);}
+.dr-tools{padding:12px 18px;border-bottom:1px solid var(--b1);display:flex;gap:8px;align-items:center;flex-shrink:0;}
+.scan-btn{flex:1;padding:10px;border:1.5px solid var(--cy);border-radius:var(--r);background:rgba(0,212,255,.07);color:var(--cy);font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:1.5px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px;}
+.scan-btn:hover{background:rgba(0,212,255,.15);box-shadow:0 0 20px rgba(0,212,255,.2);}
+.scan-btn:disabled{opacity:.4;cursor:not-allowed;}
+.scan-btn.pulsing{animation:sPulse 1s infinite;}
+@keyframes sPulse{0%,100%{border-color:var(--cy);}50%{box-shadow:0 0 24px rgba(0,212,255,.5);}}
+.auto-wrap{display:flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3);}
+.tog{width:34px;height:18px;background:var(--b2);border-radius:9px;cursor:pointer;transition:background .2s;position:relative;flex-shrink:0;}
+.tog.on{background:var(--cy);}
+.tog::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;background:#fff;border-radius:50%;transition:transform .2s;}
+.tog.on::after{transform:translateX(16px);}
+.dr-ts{font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--t3);text-align:center;padding:7px;flex-shrink:0;}
+.dr-list{flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:8px;}
+.dr-empty{text-align:center;padding:40px 16px;color:var(--t3);font-family:'JetBrains Mono',monospace;font-size:11px;line-height:2.2;}
+.nc{background:var(--s2);border:1px solid var(--b1);border-left:3px solid var(--cy);border-radius:var(--r);padding:11px 12px;position:relative;animation:fadeUp .3s ease;}
+.nc.crit{border-left-color:var(--rc);}
+.nc.high{border-left-color:var(--rh);}
+.nc.mod{border-left-color:var(--rm);}
+.nc.low{border-left-color:var(--rl);}
+.nc.plotted{opacity:.55;}
+.nc-top{display:flex;align-items:flex-start;justify-content:space-between;gap:7px;margin-bottom:4px;}
+.nc-title{font-size:12px;font-weight:600;color:var(--tx);line-height:1.3;}
+.nc-rtag{font-family:'JetBrains Mono',monospace;font-size:8px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap;flex-shrink:0;}
+.nc-meta{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t3);margin-bottom:5px;}
+.nc-sum{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--t2);line-height:1.6;margin-bottom:8px;}
+.nc-acts{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.nc-link{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--cy);text-decoration:none;padding:4px 9px;border:1px solid rgba(0,212,255,.3);border-radius:5px;transition:all .2s;}
+.nc-link:hover{background:rgba(0,212,255,.1);}
+.nc-plot{font-family:'JetBrains Mono',monospace;font-size:9px;color:#fff;background:var(--rc);border:none;padding:4px 11px;border-radius:5px;cursor:pointer;font-weight:700;transition:all .2s;}
+.nc-plot:hover{opacity:.85;}
+.nc-plot.done{background:var(--rm);cursor:default;}
+.nc-dis{position:absolute;top:8px;right:8px;background:none;border:none;color:var(--t3);cursor:pointer;font-size:11px;opacity:0;transition:opacity .2s;padding:2px 5px;}
+.nc:hover .nc-dis{opacity:1;}
+.nc-dis:hover{color:var(--rc);}
+.nc-new{width:7px;height:7px;border-radius:50%;background:var(--rc);flex-shrink:0;margin-top:3px;animation:pulse 1s infinite;}
+
+/* ── ALERT BANNERS ── */
+.banners{position:fixed;top:62px;left:50%;transform:translateX(-50%);z-index:2000;display:flex;flex-direction:column;gap:6px;align-items:center;pointer-events:none;}
+.banner{background:var(--s3);border:1.5px solid var(--rc);border-radius:100px;padding:9px 20px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--rc);display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(255,45,85,.3);pointer-events:auto;cursor:pointer;animation:bSlide .4s ease;white-space:nowrap;}
+.banner:hover{background:rgba(255,45,85,.1);}
+@keyframes bSlide{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:none;}}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--s3);border:1px solid var(--cy);border-radius:100px;padding:9px 22px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cy);z-index:9999;pointer-events:none;display:none;white-space:nowrap;box-shadow:0 0 24px rgba(0,212,255,.25);}
+.toast.show{display:block;animation:tAnim 2.8s ease forwards;}
+@keyframes tAnim{0%{opacity:0;transform:translateX(-50%) translateY(8px);}12%{opacity:1;transform:translateX(-50%) translateY(0);}82%{opacity:1;}100%{opacity:0;}}
+@keyframes pinPulse{0%,100%{box-shadow:0 0 22px rgba(255,45,85,.5);}50%{box-shadow:0 0 40px rgba(255,45,85,.9);}}
 </style>
 </head>
 <body>
-
 <div class="app">
 
-  <!-- ── Header ───────────────────────────── -->
-  <header class="header">
-    <div class="header-left">
-      <div class="logo">
-        <div class="logo-icon">S</div>
-        <div>
-          <div class="logo-text">SECMAP</div>
-          <div class="logo-sub">Dublin Security Intelligence</div>
-        </div>
-      </div>
-      <div class="header-divider"></div>
-      <div class="status-bar">
-        <div class="status-dot"></div>
-        <span id="status-text">SYSTEM OPERATIONAL</span>
-      </div>
-    </div>
-    <div class="header-right">
-      <div class="office-badge badge-hume" onclick="focusOffice('hume')">
-        <div class="badge-dot"></div>
-        A · 5-HUME
-      </div>
-      <div class="office-badge badge-styne" onclick="focusOffice('styne')">
-        <div class="badge-dot"></div>
-        B · STYNE HOUSE
-      </div>
-    </div>
-  </header>
-
-  <!-- ── Body ─────────────────────────────── -->
-  <div class="body">
-
-    <!-- ── Sidebar ───────────────────────── -->
-    <aside class="sidebar">
-
-      <div class="form-panel">
-        <div class="panel-heading">ADD EVENT</div>
-        <div class="panel-sub">Protest · Incident · Alert</div>
-
-        <div class="field">
-          <label>Event Name</label>
-          <input type="text" id="inp-name" placeholder="e.g. Flotilla Solidarity Protest" autocomplete="off"/>
-        </div>
-
-        <div class="field">
-          <label>Address or Location</label>
-          <input type="text" id="inp-addr" placeholder="e.g. Kildare Street, Dublin 2" autocomplete="off"
-            onkeydown="if(event.key==='Enter') addEvent()"/>
-        </div>
-
-        <div class="field-row">
-          <div class="field" style="margin-bottom:0;">
-            <label>Time</label>
-            <input type="text" id="inp-time" placeholder="e.g. 17:00"/>
-          </div>
-          <div class="field" style="margin-bottom:0;">
-            <label>Risk Radius</label>
-            <select id="inp-radius">
-              <option value="900">900m — Large</option>
-              <option value="600">600m — Medium</option>
-              <option value="400" selected>400m — Standard</option>
-              <option value="200">200m — Small</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="field">
-          <label>Intelligence Notes</label>
-          <textarea id="inp-notes" rows="3"
-            placeholder="Paste Facebook post, news article, organiser, cause, Garda info, source..."></textarea>
-        </div>
-
-        <button class="add-btn" id="add-btn" onclick="addEvent()">
-          <span class="btn-label">+ PLOT ON MAP</span>
-          <span class="spinner"></span>
-        </button>
-      </div>
-
-      
-      <!-- ── Scan Panel ──────────────────────── -->
-      <div style="padding:14px 20px;border-bottom:1px solid var(--border);flex-shrink:0;">
-        <button class="scan-btn" id="scan-btn" onclick="scanForProtests()">
-          <span id="scan-icon">⬡</span>
-          <span id="scan-label">SCAN NEARBY PROTESTS</span>
-        </button>
-        <div id="scan-results-wrap" style="display:none;">
-          <div class="scan-timestamp" id="scan-timestamp"></div>
-          <div class="scan-results" id="scan-results"></div>
-        </div>
-      </div>
-
-      <div class="events-panel">
-        <div class="events-header">
-          <div class="events-title">Active Events</div>
-          <div class="events-count" id="ev-count">0</div>
-        </div>
-        <div id="ev-list">
-          <div class="empty-state">
-            <div class="empty-icon">⬡</div>
-            No events logged.<br/>
-            Add a protest or incident<br/>
-            to begin risk assessment.
-          </div>
-        </div>
-      </div>
-
-      <div class="action-bar">
-        <button class="act-btn" onclick="copyBriefing()">
-          <span class="act-icon">📋</span>
-          Copy Brief
-        </button>
-        <button class="act-btn" onclick="takeScreenshot()">
-          <span class="act-icon">📸</span>
-          Screenshot
-        </button>
-        <button class="act-btn" onclick="clearAll()">
-          <span class="act-icon">⟳</span>
-          Clear All
-        </button>
-      </div>
-
-    </aside>
-
-    <!-- ── Map ─────────────────────────── -->
-    <div class="map-wrap">
-      <div id="map"></div>
-
-      <!-- Offices overlay -->
-      <div class="map-overlay overlay-offices" id="offices-overlay">
-        <div class="office-pill" style="border-color:var(--hume-col);color:var(--hume-col);"
-             onclick="focusOffice('hume')">
-          <div class="op-badge">Office A</div>
-          <div class="op-name">5-HUME</div>
-          <div class="op-addr">3–8 Hume St, D02 C624</div>
-          <div class="op-dist-info" id="hume-dist-info"></div>
-        </div>
-        <div class="office-pill" style="border-color:var(--styne-col);color:var(--styne-col);"
-             onclick="focusOffice('styne')">
-          <div class="op-badge">Office B</div>
-          <div class="op-name">STYNE HOUSE</div>
-          <div class="op-addr">Hatch St Upper, D02 DY27</div>
-          <div class="op-dist-info" id="styne-dist-info"></div>
-        </div>
-      </div>
-
-      <!-- Legend -->
-      <div class="map-overlay overlay-legend">
-        <div class="legend-title">Disruption Zones</div>
-        <div class="legend-row">
-          <span class="leg-swatch" style="background:#FF2D55;"></span>Critical — 0–150m
-        </div>
-        <div class="legend-row">
-          <span class="leg-swatch" style="background:#FF9500;"></span>High — 150–350m
-        </div>
-        <div class="legend-row">
-          <span class="leg-swatch" style="background:#34C759;"></span>Moderate — 350–600m
-        </div>
-        <div class="legend-row">
-          <span class="leg-swatch" style="background:#007AFF;"></span>Low — 600–900m
-        </div>
-        <div class="legend-divider"></div>
-        <div class="legend-row">
-          <span class="leg-swatch" style="background:var(--hume-col);border-radius:50%;"></span>5-Hume (A)
-        </div>
-        <div class="legend-row">
-          <span class="leg-swatch" style="background:var(--styne-col);border-radius:50%;"></span>Styne House (B)
-        </div>
-      </div>
+<!-- HEADER -->
+<header class="hdr">
+  <div class="logo">
+    <div class="logo-icon">S</div>
+    <div>
+      <div class="logo-name">SECMAP</div>
+      <div class="logo-sub">Dublin Security Intelligence</div>
     </div>
   </div>
+  <div style="display:flex;align-items:center;">
+    <div class="hdiv"></div>
+    <div class="status-wrap">
+      <div class="sdot" id="sdot"></div>
+      <div class="stxt" id="stxt">SYSTEM OPERATIONAL</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <button class="hbtn" onclick="toggleDrawer()" title="Live Alerts">
+      🔔 ALERTS <span class="alert-badge" id="abadge">0</span>
+    </button>
+    <div class="obadge ba" onclick="focusOffice('hume')"><span>●</span> A · 5-HUME</div>
+    <div class="obadge bb" onclick="focusOffice('styne')"><span>●</span> B · STYNE HOUSE</div>
+  </div>
+</header>
+
+<!-- ALERT DRAWER -->
+<div class="drawer" id="drawer">
+  <div class="dr-hdr">
+    <div>
+      <div class="dr-title">LIVE ALERTS</div>
+      <div class="dr-sub">Protests &amp; incidents near Dublin D2</div>
+    </div>
+    <button class="dr-close" onclick="toggleDrawer()">✕</button>
+  </div>
+  <div class="dr-tools">
+    <button class="scan-btn" id="scan-btn" onclick="runScan()">
+      <span id="scan-icon">⬡</span><span id="scan-lbl">SCAN NOW</span>
+    </button>
+    <div class="auto-wrap">
+      <div class="tog" id="auto-tog" onclick="toggleAuto()" title="Auto every 30 min"></div>
+      AUTO
+    </div>
+  </div>
+  <div class="dr-ts" id="dr-ts">Not scanned yet</div>
+  <div class="dr-list" id="dr-list">
+    <div class="dr-empty">⬡<br/>No alerts yet.<br/>Click SCAN NOW to search<br/>for protests near D2.<br/><br/>Enable AUTO to check<br/>every 30 minutes.</div>
+  </div>
 </div>
+
+<!-- ALERT BANNERS -->
+<div class="banners" id="banners"></div>
+
+<div class="body">
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="form-wrap">
+    <div class="sh">ADD EVENT</div>
+    <div class="ss">Protest · Incident · Alert</div>
+    <div class="fl"><label>Event Name</label><input class="inp" id="i-name" type="text" placeholder="e.g. Flotilla Solidarity Protest" autocomplete="off"/></div>
+    <div class="fl"><label>Address or Location</label><input class="inp" id="i-addr" type="text" placeholder="e.g. Kildare Street, Dublin 2" autocomplete="off" onkeydown="if(event.key==='Enter')addEvent()"/></div>
+    <div class="r2">
+      <div class="fl" style="margin-bottom:0"><label>Time</label><input class="inp" id="i-time" type="text" placeholder="e.g. 17:00"/></div>
+      <div class="fl" style="margin-bottom:0"><label>Risk Radius</label>
+        <select class="inp" id="i-rad">
+          <option value="900">900m — Large</option>
+          <option value="600">600m — Medium</option>
+          <option value="400" selected>400m — Standard</option>
+          <option value="200">200m — Small</option>
+        </select>
+      </div>
+    </div>
+    <div class="fl" style="margin-top:10px"><label>Intelligence Notes</label><textarea class="inp" id="i-notes" rows="3" placeholder="Paste Facebook post, news, organiser name, Garda info..."></textarea></div>
+    <button class="add-btn" id="add-btn" onclick="addEvent()"><span class="lbl">+ PLOT ON MAP</span><span class="spin"></span></button>
+  </div>
+
+  <div class="ev-panel">
+    <div class="ev-hdr">
+      <div class="ev-title">Active Events</div>
+      <div class="ev-ct" id="ev-ct">0</div>
+    </div>
+    <div id="ev-list"><div class="empty">⬡<br/>No events plotted yet.<br/>Add manually above<br/>or use 🔔 ALERTS to scan.</div></div>
+  </div>
+
+  <div class="act-bar">
+    <button class="abt" onclick="doBriefing()"><span class="abt-icon">📋</span>Briefing</button>
+    <button class="abt" onclick="copyText()"><span class="abt-icon">📄</span>Copy Text</button>
+    <button class="abt" onclick="clearAll()"><span class="abt-icon">⟳</span>Clear All</button>
+  </div>
+</aside>
+
+<!-- MAP -->
+<div class="map-wrap">
+  <div id="map"></div>
+
+  <!-- Office pills overlay -->
+  <div class="mov ov-off">
+    <div class="opill" style="border-color:var(--ha);color:var(--ha);" onclick="focusOffice('hume')">
+      <div class="op-badge">Office A</div>
+      <div class="op-name">5-HUME</div>
+      <div class="op-addr">5 Hume St, D02 C624</div>
+      <div class="op-dist" id="hume-di"></div>
+    </div>
+    <div class="opill" style="border-color:var(--hb);color:var(--hb);" onclick="focusOffice('styne')">
+      <div class="op-badge">Office B</div>
+      <div class="op-name">STYNE HOUSE</div>
+      <div class="op-addr">Hatch St Upper, D02 DY27</div>
+      <div class="op-dist" id="styne-di"></div>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="mov ov-leg">
+    <div class="leg-t">Disruption Zones</div>
+    <div class="leg-r"><span class="leg-s" style="background:#FF2D55"></span>Critical 0–150m</div>
+    <div class="leg-r"><span class="leg-s" style="background:#FF9500"></span>High 150–350m</div>
+    <div class="leg-r"><span class="leg-s" style="background:#34C759"></span>Moderate 350–600m</div>
+    <div class="leg-r"><span class="leg-s" style="background:#007AFF"></span>Low 600–900m</div>
+    <div class="leg-div"></div>
+    <div class="leg-r"><span class="leg-s" style="background:var(--ha);border-radius:50%"></span>5-Hume (A)</div>
+    <div class="leg-r"><span class="leg-s" style="background:var(--hb);border-radius:50%"></span>Styne House (B)</div>
+  </div>
+</div>
+</div><!-- end body -->
+</div><!-- end app -->
 
 <div class="toast" id="toast"></div>
 
 <script>
-// ── Fixed Offices ──────────────────────────────────────────────────────────
+// ─── FIXED OFFICES ────────────────────────────────────────────────────────
 const OFFICES = [
-  {
-    id: 'hume',
-    label: '5-Hume',
-    full: '3–8 Hume Street',
-    addr: '3–8 Hume St, Dublin 2, D02 C624',
-    latlng: [53.33475, -6.25590],
-    color: '#00D4FF',
-    letter: 'A',
-    distInfoEl: 'hume-dist-info'
-  },
-  {
-    id: 'styne',
-    label: 'Styne House',
-    full: 'Hatch Street Upper',
-    addr: 'Hatch St Upper, Saint Kevin\'s, D02 DY27',
-    latlng: [53.33170, -6.25750],
-    color: '#FF5C3A',
-    letter: 'B',
-    distInfoEl: 'styne-dist-info'
-  }
+  {id:'hume', label:'5-Hume',     full:'5 Hume St',      addr:'5 Hume Street, Dublin 2, D02 C624',           ll:[53.33480,-6.25590], col:'#00D4FF', let:'A', di:'hume-di'},
+  {id:'styne',label:'Styne House',full:'Hatch St Upper', addr:"Hatch Street Upper, Saint Kevin's, D02 DY27", ll:[53.33175,-6.25780], col:'#FF5C3A', let:'B', di:'styne-di'},
 ];
 
-// ── Map Init ───────────────────────────────────────────────────────────────
-const map = L.map('map', {
-  center: [53.3335, -6.2565],
-  zoom: 15,
-  zoomControl: true,
-  attributionControl: true
-});
+// ─── MAP ──────────────────────────────────────────────────────────────────
+const map = L.map('map',{center:[53.3335,-6.2565],zoom:15,zoomControl:true});
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:19}).addTo(map);
 
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap contributors',
-  maxZoom: 19
-}).addTo(map);
+let events=[],layers=[],notifs=[],autoInt=null,drawerOpen=false,unread=0;
+const addL=l=>{layers.push(l);return l.addTo(map);};
 
-// ── State ──────────────────────────────────────────────────────────────────
-let events = [];
-let mapLayers = [];
-
-// ── Helpers ────────────────────────────────────────────────────────────────
-function haversine(a, b) {
-  const R = 6371000;
-  const dLat = (b[0] - a[0]) * Math.PI / 180;
-  const dLon = (b[1] - a[1]) * Math.PI / 180;
-  const s = Math.sin(dLat/2)**2 +
-            Math.cos(a[0]*Math.PI/180) * Math.cos(b[0]*Math.PI/180) * Math.sin(dLon/2)**2;
-  return Math.round(R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1-s)));
+// ─── HELPERS ──────────────────────────────────────────────────────────────
+function hav(a,b){
+  const R=6371000,dLa=(b[0]-a[0])*Math.PI/180,dLo=(b[1]-a[1])*Math.PI/180;
+  const s=Math.sin(dLa/2)**2+Math.cos(a[0]*Math.PI/180)*Math.cos(b[0]*Math.PI/180)*Math.sin(dLo/2)**2;
+  return Math.round(R*2*Math.atan2(Math.sqrt(s),Math.sqrt(1-s)));
+}
+function risk(d){
+  if(d<150)return{l:'CRITICAL',c:'#FF2D55',bg:'rgba(255,45,85,.15)',  rc:'#FF2D55',rf:'rgba(255,45,85,.30)', w:4,  cls:'crit'};
+  if(d<350)return{l:'HIGH',    c:'#FF9500',bg:'rgba(255,149,0,.15)',  rc:'#FF9500',rf:'rgba(255,149,0,.24)',  w:3.5,cls:'high'};
+  if(d<600)return{l:'MODERATE',c:'#34C759',bg:'rgba(52,199,89,.13)',  rc:'#34C759',rf:'rgba(52,199,89,.18)',  w:3,  cls:'mod'};
+  return         {l:'LOW',     c:'#007AFF',bg:'rgba(0,122,255,.13)',  rc:'#007AFF',rf:'rgba(0,122,255,.15)',  w:2.5,cls:'low'};
+}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.className='toast show';setTimeout(()=>t.className='toast',2900);}
+function setStatus(t,err){
+  document.getElementById('stxt').textContent=t;
+  document.getElementById('sdot').style.background=err?'#FF2D55':'#34C759';
+}
+async function geocode(a){
+  const q=a.toLowerCase().includes('dublin')?a:a+', Dublin, Ireland';
+  const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(q)+'&limit=1&countrycodes=ie',{headers:{'Accept-Language':'en','User-Agent':'SECMAP/1.0'}});
+  const d=await r.json();
+  if(!d||!d.length)throw new Error('Not found');
+  return[parseFloat(d[0].lat),parseFloat(d[0].lon)];
 }
 
-function getRisk(d) {
-  if (d < 150) return {
-    label: 'CRITICAL', col: '#FF2D55', bg: 'rgba(255,45,85,0.15)',
-    ring: '#FF2D55', fill: 'rgba(255,45,85,0.30)', w: 4
-  };
-  if (d < 350) return {
-    label: 'HIGH', col: '#FF9500', bg: 'rgba(255,149,0,0.15)',
-    ring: '#FF9500', fill: 'rgba(255,149,0,0.24)', w: 3.5
-  };
-  if (d < 600) return {
-    label: 'MODERATE', col: '#34C759', bg: 'rgba(52,199,89,0.13)',
-    ring: '#34C759', fill: 'rgba(52,199,89,0.18)', w: 3
-  };
-  return {
-    label: 'LOW', col: '#007AFF', bg: 'rgba(0,122,255,0.13)',
-    ring: '#007AFF', fill: 'rgba(0,122,255,0.14)', w: 2.5
-  };
-}
+// ─── RENDER MAP ───────────────────────────────────────────────────────────
+function renderMap(){
+  layers.forEach(l=>map.removeLayer(l));
+  layers=[];
 
-function addLayer(layer) {
-  mapLayers.push(layer);
-  return layer.addTo(map);
-}
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast show';
-  setTimeout(() => t.className = 'toast', 2700);
-}
-
-function updateStatus(text) {
-  document.getElementById('status-text').textContent = text;
-}
-
-// ── Geocode ────────────────────────────────────────────────────────────────
-async function geocode(addr) {
-  const query = addr.toLowerCase().includes('dublin') ? addr : addr + ', Dublin, Ireland';
-  const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&countrycodes=ie`;
-  const r = await fetch(url, { headers: { 'Accept-Language': 'en', 'User-Agent': 'SECMAP/1.0' } });
-  const d = await r.json();
-  if (!d || !d.length) throw new Error('Address not found');
-  return [parseFloat(d[0].lat), parseFloat(d[0].lon)];
-}
-
-// ── Render Map ─────────────────────────────────────────────────────────────
-function renderMap() {
-  mapLayers.forEach(l => map.removeLayer(l));
-  mapLayers = [];
-
-  // ── Office Markers ────────────────────────────────────────────────────
-  OFFICES.forEach(off => {
-    // Build distance rows for popup
-    const distRows = events.map(ev => {
-      const d = haversine(off.latlng, ev.latlng);
-      const r = getRisk(d);
-      return `
-        <div class="popup-row">
-          <span class="popup-row-label">${ev.name}</span>
-          <span style="display:flex;align-items:center;gap:6px;">
-            <span style="color:${r.col};font-weight:600;">${d}m</span>
-            <span class="risk-pill" style="background:${r.bg};color:${r.col};">${r.label}</span>
-          </span>
-        </div>`;
+  // Office markers
+  OFFICES.forEach(off=>{
+    const rows=events.map(ev=>{
+      const d=hav(off.ll,ev.ll),r=risk(d);
+      return `<div class="pu-row"><span class="pu-lbl">${ev.name}</span><span style="display:flex;gap:5px;align-items:center"><span style="color:${r.c};font-weight:600">${d}m</span><span class="rp" style="background:${r.bg};color:${r.c}">${r.l}</span></span></div>`;
     }).join('');
-
-    const popupHtml = `
-      <div class="popup-wrap">
-        <div class="popup-office-title" style="color:${off.color};">${off.label}</div>
-        <div class="popup-addr">${off.addr}</div>
-        ${events.length ? `
-          <div class="popup-divider"></div>
-          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">Distance to events</div>
-          ${distRows}
-        ` : `<div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);">No events plotted yet.</div>`}
-      </div>`;
-
-    const icon = L.divIcon({
-      html: `
-        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
-          <div style="
-            width:44px;height:44px;border-radius:50%;
-            background:rgba(${off.color === '#00D4FF' ? '0,212,255' : '255,92,58'},0.12);
-            border:3px solid ${off.color};
-            color:${off.color};
-            font-family:'Bebas Neue',sans-serif;font-size:20px;
-            display:flex;align-items:center;justify-content:center;
-            box-shadow:0 0 24px rgba(${off.color === '#00D4FF' ? '0,212,255' : '255,92,58'},0.4);
-          ">${off.letter}</div>
-          <div style="
-            background:rgba(6,8,13,0.95);
-            border:2px solid ${off.color};
-            border-radius:9px;
-            padding:6px 12px;
-            text-align:center;
-            min-width:120px;
-            box-shadow:0 4px 16px rgba(0,0,0,0.6);
-          ">
-            <div style="font-family:'Instrument Sans',sans-serif;font-size:12px;font-weight:700;color:${off.color};">${off.label}</div>
-            <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(255,255,255,0.4);margin-top:1px;">${off.full}</div>
-          </div>
-        </div>`,
-      iconAnchor: [22, 44],
-      className: ''
-    });
-
-    addLayer(L.marker(off.latlng, { icon, zIndexOffset: 2000 })
-      .bindPopup(popupHtml, { maxWidth: 320, className: 'secmap-popup' }));
-
-    // Update overlay pill distances
-    const el = document.getElementById(off.distInfoEl);
-    if (el && events.length) {
-      const nearest = Math.min(...events.map(ev => haversine(off.latlng, ev.latlng)));
-      const r = getRisk(nearest);
-      el.innerHTML = `Nearest event: <span style="color:${r.col};font-weight:600;">${nearest}m · ${r.label}</span>`;
-    } else if (el) {
-      el.innerHTML = '';
-    }
+    const pu=`<div class="pu"><div class="pu-title" style="color:${off.col}">${off.label}</div><div class="pu-addr">${off.addr}</div>${events.length?`<div class="pu-div"></div><div class="pu-sec">Distance to events</div>${rows}`:'<div style="font-family:monospace;font-size:10px;color:var(--t3)">No events plotted yet</div>'}</div>`;
+    const ic=L.divIcon({html:`<div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:42px;height:42px;border-radius:50%;background:${off.col}18;border:3px solid ${off.col};color:${off.col};font-family:'Bebas Neue',sans-serif;font-size:19px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 22px ${off.col}44">${off.let}</div><div style="background:rgba(5,7,14,.95);border:2px solid ${off.col};border-radius:8px;padding:5px 11px;text-align:center;min-width:115px;box-shadow:0 3px 14px rgba(0,0,0,.6)"><div style="font-family:'Instrument Sans',sans-serif;font-size:12px;font-weight:700;color:${off.col}">${off.label}</div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:rgba(255,255,255,.35);margin-top:1px">${off.full}</div></div></div>`,iconAnchor:[21,42],className:''});
+    addL(L.marker(off.ll,{icon:ic,zIndexOffset:2000}).bindPopup(pu,{maxWidth:310}));
+    const el=document.getElementById(off.di);
+    if(el&&events.length){const n=Math.min(...events.map(ev=>hav(off.ll,ev.ll)));const r=risk(n);el.innerHTML=`Nearest: <span style="color:${r.c};font-weight:600">${n}m · ${r.l}</span>`;}
+    else if(el)el.innerHTML='';
   });
 
-  // ── Event Markers ──────────────────────────────────────────────────────
-  events.forEach(ev => {
-    const radius = parseInt(ev.radius);
+  // Event markers
+  events.forEach(ev=>{
+    const R=parseInt(ev.rad);
+    [[R,'#007AFF','rgba(0,122,255,.10)',2.5],[Math.min(R,600),'#34C759','rgba(52,199,89,.16)',3],[Math.min(R,350),'#FF9500','rgba(255,149,0,.22)',3.5],[Math.min(R,150),'#FF2D55','rgba(255,45,85,.30)',4]]
+      .filter((z,i,a)=>i===0||z[0]<a[i-1][0]).reverse()
+      .forEach(z=>addL(L.circle(ev.ll,{radius:z[0],color:z[1],fillColor:z[2],fillOpacity:1,weight:z[3]})));
 
-    // Heatmap rings — outermost first
-    const ringDefs = [
-      { r: radius,               col: '#007AFF', fill: 'rgba(0,122,255,0.10)',   w: 2.5 },
-      { r: Math.min(radius, 600), col: '#34C759', fill: 'rgba(52,199,89,0.14)',   w: 3 },
-      { r: Math.min(radius, 350), col: '#FF9500', fill: 'rgba(255,149,0,0.20)',   w: 3.5 },
-      { r: Math.min(radius, 150), col: '#FF2D55', fill: 'rgba(255,45,85,0.28)',   w: 4 },
-    ];
-
-    const uniqueRings = [];
-    const seen = new Set();
-    ringDefs.forEach(rd => {
-      if (!seen.has(rd.r)) { seen.add(rd.r); uniqueRings.push(rd); }
+    OFFICES.forEach(off=>{
+      const d=hav(off.ll,ev.ll),r=risk(d);
+      addL(L.polyline([off.ll,ev.ll],{color:off.col,weight:2,dashArray:'7,5',opacity:.8}));
+      const mid=[(off.ll[0]+ev.ll[0])/2,(off.ll[1]+ev.ll[1])/2];
+      addL(L.marker(mid,{icon:L.divIcon({html:`<div style="background:rgba(5,7,14,.95);color:${r.c};font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;padding:3px 10px;border-radius:100px;border:1px solid ${r.rc};white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.5)">${off.let}: ${d}m · ${Math.round(d/80)}min · ${r.l}</div>`,iconAnchor:[50,10],className:''})}));
     });
 
-    uniqueRings.forEach(z => {
-      addLayer(L.circle(ev.latlng, {
-        radius: z.r,
-        color: z.col,
-        fillColor: z.fill,
-        fillOpacity: 1,
-        weight: z.w,
-        opacity: 0.9
-      }));
-    });
-
-    // Lines + distance labels to each office
-    OFFICES.forEach(off => {
-      const d = haversine(off.latlng, ev.latlng);
-      const risk = getRisk(d);
-      const walkMin = Math.round(d / 80);
-
-      addLayer(L.polyline([off.latlng, ev.latlng], {
-        color: off.color,
-        weight: 1.5,
-        dashArray: '6,5',
-        opacity: 0.7
-      }));
-
-      const mid = [
-        (off.latlng[0] + ev.latlng[0]) / 2,
-        (off.latlng[1] + ev.latlng[1]) / 2
-      ];
-
-      const distIcon = L.divIcon({
-        html: `<div style="
-          background:rgba(6,8,13,0.94);
-          color:${risk.col};
-          font-family:'JetBrains Mono',monospace;
-          font-size:9px;
-          font-weight:600;
-          padding:3px 10px;
-          border-radius:100px;
-          border:1px solid ${risk.ring};
-          white-space:nowrap;
-          box-shadow:0 2px 8px rgba(0,0,0,0.5);
-        ">${off.letter}: ${d}m · ${walkMin}min · ${risk.label}</div>`,
-        iconAnchor: [50, 10],
-        className: ''
-      });
-
-      addLayer(L.marker(mid, { icon: distIcon }));
-    });
-
-    // Event pin popup
-    const dA = haversine(OFFICES[0].latlng, ev.latlng);
-    const dB = haversine(OFFICES[1].latlng, ev.latlng);
-    const rA = getRisk(dA), rB = getRisk(dB);
-
-    const notesHtml = ev.notes
-      ? `<div class="popup-divider"></div>
-         <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;">Intelligence Notes</div>
-         <div class="popup-notes">${ev.notes}</div>`
-      : '';
-
-    const popupHtml = `
-      <div class="popup-wrap">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-          <span style="color:#FF2D55;font-size:16px;">⚠</span>
-          <div class="popup-title">${ev.name}</div>
-        </div>
-        <div class="popup-addr">${ev.addr}</div>
-        ${ev.time ? `<div style="font-family:var(--font-mono);font-size:10px;color:#FF2D55;font-weight:600;margin-bottom:10px;">⏱ ${ev.time}</div>` : ''}
-        <div class="popup-divider"></div>
-        <div style="font-family:var(--font-mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:8px;">Office Risk Assessment</div>
-        <div class="popup-row">
-          <span class="popup-row-label" style="color:#00D4FF;">A · 5-Hume</span>
-          <span style="display:flex;align-items:center;gap:6px;">
-            <span style="color:${rA.col};font-weight:600;">${dA}m · ~${Math.round(dA/80)}min</span>
-            <span class="risk-pill" style="background:${rA.bg};color:${rA.col};">${rA.label}</span>
-          </span>
-        </div>
-        <div class="popup-row">
-          <span class="popup-row-label" style="color:#FF5C3A;">B · Styne House</span>
-          <span style="display:flex;align-items:center;gap:6px;">
-            <span style="color:${rB.col};font-weight:600;">${dB}m · ~${Math.round(dB/80)}min</span>
-            <span class="risk-pill" style="background:${rB.bg};color:${rB.col};">${rB.label}</span>
-          </span>
-        </div>
-        <div class="popup-row">
-          <span class="popup-row-label">Risk radius</span>
-          <span style="color:var(--text2);font-weight:600;">${ev.radius}m</span>
-        </div>
-        ${notesHtml}
-      </div>`;
-
-    const evIcon = L.divIcon({
-      html: `
-        <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
-          <div style="
-            width:44px;height:44px;border-radius:50%;
-            background:rgba(255,45,85,0.15);
-            border:3px solid #FF2D55;
-            color:#FF2D55;
-            font-size:18px;font-weight:700;
-            display:flex;align-items:center;justify-content:center;
-            box-shadow:0 0 24px rgba(255,45,85,0.5);
-            animation:pinPulse 2s infinite;
-          ">⚠</div>
-          <div style="
-            background:rgba(6,8,13,0.96);
-            border:2px solid #FF2D55;
-            border-radius:9px;
-            padding:6px 12px;
-            text-align:center;
-            min-width:130px;
-            max-width:180px;
-            box-shadow:0 4px 16px rgba(0,0,0,0.6);
-          ">
-            <div style="
-              font-family:'Instrument Sans',sans-serif;
-              font-size:11px;font-weight:700;color:#FF6B6B;
-              white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-            ">${ev.name}</div>
-            ${ev.time ? `<div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#FF2D55;margin-top:2px;font-weight:700;">⏱ ${ev.time}</div>` : ''}
-          </div>
-        </div>`,
-      iconAnchor: [22, 44],
-      className: ''
-    });
-
-    addLayer(L.marker(ev.latlng, { icon: evIcon, zIndexOffset: 1500 })
-      .bindPopup(popupHtml, { maxWidth: 320, className: 'secmap-popup' }));
+    const dA=hav(OFFICES[0].ll,ev.ll),dB=hav(OFFICES[1].ll,ev.ll),rA=risk(dA),rB=risk(dB);
+    const notes=ev.notes?`<div class="pu-div"></div><div class="pu-sec">Intelligence Notes</div><div class="pu-notes">${ev.notes}</div>`:'';
+    const pu=`<div class="pu"><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span style="color:#FF2D55;font-size:15px">⚠</span><div class="pu-title" style="color:#FF2D55">${ev.name}</div></div><div class="pu-addr">${ev.addr}</div>${ev.time?`<div style="font-family:monospace;font-size:10px;color:#FF2D55;font-weight:600;margin-bottom:8px">⏱ ${ev.time}</div>`:''}<div class="pu-div"></div><div class="pu-sec">Office Risk Assessment</div><div class="pu-row"><span class="pu-lbl" style="color:#00D4FF">A · 5-Hume</span><span style="display:flex;gap:5px;align-items:center"><span style="color:${rA.c};font-weight:600">${dA}m · ~${Math.round(dA/80)}min</span><span class="rp" style="background:${rA.bg};color:${rA.c}">${rA.l}</span></span></div><div class="pu-row"><span class="pu-lbl" style="color:#FF5C3A">B · Styne House</span><span style="display:flex;gap:5px;align-items:center"><span style="color:${rB.c};font-weight:600">${dB}m · ~${Math.round(dB/80)}min</span><span class="rp" style="background:${rB.bg};color:${rB.c}">${rB.l}</span></span></div>${notes}</div>`;
+    const ic=L.divIcon({html:`<div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div style="width:42px;height:42px;border-radius:50%;background:rgba(255,45,85,.15);border:3px solid #FF2D55;color:#FF2D55;font-size:17px;display:flex;align-items:center;justify-content:center;box-shadow:0 0 22px rgba(255,45,85,.5);animation:pinPulse 2s infinite">⚠</div><div style="background:rgba(5,7,14,.96);border:2px solid #FF2D55;border-radius:8px;padding:5px 11px;text-align:center;min-width:125px;max-width:175px;box-shadow:0 3px 14px rgba(0,0,0,.6)"><div style="font-family:'Instrument Sans',sans-serif;font-size:11px;font-weight:700;color:#FF6B6B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ev.name}</div>${ev.time?`<div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#FF2D55;margin-top:2px;font-weight:700">⏱ ${ev.time}</div>`:''}</div></div>`,iconAnchor:[21,42],className:''});
+    addL(L.marker(ev.ll,{icon:ic,zIndexOffset:1500}).bindPopup(pu,{maxWidth:310}));
   });
 }
 
-// ── Add Event ──────────────────────────────────────────────────────────────
-async function addEvent() {
-  const name   = document.getElementById('inp-name').value.trim();
-  const addr   = document.getElementById('inp-addr').value.trim();
-  if (!addr) { showToast('⚠ Please enter an address'); return; }
-
-  const btn = document.getElementById('add-btn');
-  btn.classList.add('loading');
-  btn.disabled = true;
-  updateStatus('GEOCODING ADDRESS...');
-
-  try {
-    const latlng = await geocode(addr);
-    const ev = {
-      id:     Date.now(),
-      name:   name || addr,
-      addr,
-      latlng,
-      time:   document.getElementById('inp-time').value.trim(),
-      radius: document.getElementById('inp-radius').value,
-      notes:  document.getElementById('inp-notes').value.trim()
-    };
-
-    events.push(ev);
-    renderMap();
-    renderList();
-
-    // Fit bounds to show all
-    const allPoints = [...OFFICES.map(o => o.latlng), latlng];
-    map.fitBounds([
-      [Math.min(...allPoints.map(p=>p[0]))-0.003, Math.min(...allPoints.map(p=>p[1]))-0.004],
-      [Math.max(...allPoints.map(p=>p[0]))+0.003, Math.max(...allPoints.map(p=>p[1]))+0.004]
-    ], { animate: true });
-
-    // Clear form
-    ['inp-name','inp-addr','inp-time','inp-notes'].forEach(id => {
-      document.getElementById(id).value = '';
-    });
-
-    updateStatus(`${events.length} EVENT${events.length>1?'S':''} ACTIVE`);
-    showToast(`✓ ${ev.name} plotted`);
-
-  } catch(e) {
-    showToast('⚠ Address not found — try adding Dublin or a landmark');
-    updateStatus('GEOCODING FAILED — TRY AGAIN');
-  }
-
-  btn.classList.remove('loading');
-  btn.disabled = false;
+// ─── ADD EVENT ────────────────────────────────────────────────────────────
+async function addEvent(){
+  const name=document.getElementById('i-name').value.trim();
+  const addr=document.getElementById('i-addr').value.trim();
+  if(!addr){toast('⚠ Please enter an address');return;}
+  const btn=document.getElementById('add-btn');
+  btn.classList.add('loading');btn.disabled=true;
+  setStatus('GEOCODING ADDRESS...');
+  try{
+    const ll=await geocode(addr);
+    const ev={id:Date.now(),name:name||addr,addr,ll,time:document.getElementById('i-time').value.trim(),rad:document.getElementById('i-rad').value,notes:document.getElementById('i-notes').value.trim()};
+    events.push(ev);renderMap();renderList();
+    const all=[...OFFICES.map(o=>o.ll),ll];
+    map.fitBounds([[Math.min(...all.map(p=>p[0]))-0.003,Math.min(...all.map(p=>p[1]))-0.004],[Math.max(...all.map(p=>p[0]))+0.003,Math.max(...all.map(p=>p[1]))+0.004]],{animate:true});
+    ['i-name','i-addr','i-time','i-notes'].forEach(id=>document.getElementById(id).value='');
+    setStatus(`${events.length} EVENT${events.length>1?'S':''} ACTIVE`);
+    toast(`✓ ${ev.name} plotted on map`);
+  }catch(e){toast('⚠ Address not found — try adding Dublin');setStatus('GEOCODING FAILED',true);}
+  btn.classList.remove('loading');btn.disabled=false;
 }
 
-// ── Remove Event ───────────────────────────────────────────────────────────
-function removeEvent(id) {
-  events = events.filter(e => e.id !== id);
-  renderMap();
-  renderList();
-  const count = events.length;
-  updateStatus(count ? `${count} EVENT${count>1?'S':''} ACTIVE` : 'SYSTEM OPERATIONAL');
-  showToast('Event removed');
-}
+function removeEvent(id){events=events.filter(e=>e.id!==id);renderMap();renderList();const n=events.length;setStatus(n?`${n} EVENT${n>1?'S':''} ACTIVE`:'SYSTEM OPERATIONAL');toast('Event removed');}
+function clearAll(){if(events.length&&!confirm('Clear all events from map?'))return;events=[];renderMap();renderList();setStatus('SYSTEM OPERATIONAL');toast('Map cleared');}
+function focusEvent(id){const ev=events.find(e=>e.id===id);if(ev)map.setView(ev.ll,16,{animate:true});}
+function focusOffice(id){const o=OFFICES.find(o=>o.id===id);if(o)map.setView(o.ll,16,{animate:true});}
 
-// ── Render Event List ──────────────────────────────────────────────────────
-function renderList() {
-  document.getElementById('ev-count').textContent = events.length;
-  const list = document.getElementById('ev-list');
-
-  if (!events.length) {
-    list.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">⬡</div>
-        No events logged.<br/>
-        Add a protest or incident<br/>
-        to begin risk assessment.
-      </div>`;
-    return;
-  }
-
-  list.innerHTML = events.map(ev => {
-    const dA = haversine(OFFICES[0].latlng, ev.latlng);
-    const dB = haversine(OFFICES[1].latlng, ev.latlng);
-    const rA = getRisk(dA), rB = getRisk(dB);
-    return `
-      <div class="event-card" onclick="focusEvent(${ev.id})">
-        <button class="del-btn" onclick="event.stopPropagation();removeEvent(${ev.id})">✕</button>
-        <div class="event-card-top">
-          <div class="event-name">${ev.name}</div>
-          ${ev.time ? `<div class="event-time">⏱ ${ev.time}</div>` : ''}
-        </div>
-        <div class="event-addr">${ev.addr}</div>
-        <div class="dist-row">
-          <div class="dist-chip" style="background:${rA.bg};">
-            <div class="dist-chip-label" style="color:${rA.col};">A · 5-Hume</div>
-            <div class="dist-chip-val" style="color:${rA.col};">${dA}m · ${Math.round(dA/80)}min</div>
-            <div class="dist-chip-risk" style="color:${rA.col};">${rA.label}</div>
-          </div>
-          <div class="dist-chip" style="background:${rB.bg};">
-            <div class="dist-chip-label" style="color:${rB.col};">B · Styne House</div>
-            <div class="dist-chip-val" style="color:${rB.col};">${dB}m · ${Math.round(dB/80)}min</div>
-            <div class="dist-chip-risk" style="color:${rB.col};">${rB.label}</div>
-          </div>
-        </div>
-      </div>`;
+function renderList(){
+  document.getElementById('ev-ct').textContent=events.length;
+  const el=document.getElementById('ev-list');
+  if(!events.length){el.innerHTML='<div class="empty">⬡<br/>No events plotted yet.<br/>Add manually above<br/>or use 🔔 ALERTS to scan.</div>';return;}
+  el.innerHTML=events.map(ev=>{
+    const dA=hav(OFFICES[0].ll,ev.ll),dB=hav(OFFICES[1].ll,ev.ll),rA=risk(dA),rB=risk(dB);
+    return `<div class="ecard" onclick="focusEvent(${ev.id})"><button class="del" onclick="event.stopPropagation();removeEvent(${ev.id})">✕</button><div class="ec-top"><div class="ec-name">${ev.name}</div>${ev.time?`<div class="ec-time">⏱ ${ev.time}</div>`:''}</div><div class="ec-addr">${ev.addr}</div><div class="dc-row"><div class="dc" style="background:${rA.bg}"><div class="dc-lbl" style="color:${rA.c}">A · 5-Hume</div><div class="dc-val" style="color:${rA.c}">${dA}m · ${Math.round(dA/80)}min</div><div class="dc-r" style="color:${rA.c}">${rA.l}</div></div><div class="dc" style="background:${rB.bg}"><div class="dc-lbl" style="color:${rB.c}">B · Styne House</div><div class="dc-val" style="color:${rB.c}">${dB}m · ${Math.round(dB/80)}min</div><div class="dc-r" style="color:${rB.c}">${rB.l}</div></div></div></div>`;
   }).join('');
 }
 
-// ── Focus ──────────────────────────────────────────────────────────────────
-function focusEvent(id) {
-  const ev = events.find(e => e.id === id);
-  if (ev) map.setView(ev.latlng, 16, { animate: true });
+// ─── DRAWER ───────────────────────────────────────────────────────────────
+function toggleDrawer(){
+  drawerOpen=!drawerOpen;
+  document.getElementById('drawer').classList.toggle('open',drawerOpen);
+  if(drawerOpen){unread=0;updateBell();}
+}
+function updateBell(){
+  const b=document.getElementById('abadge');
+  if(unread>0){b.textContent=unread;b.classList.add('show');}
+  else b.classList.remove('show');
+}
+function toggleAuto(){
+  const t=document.getElementById('auto-tog');
+  const on=t.classList.toggle('on');
+  if(on){autoInt=setInterval(runScan,30*60*1000);toast('✓ Auto-scan ON — every 30 min');setStatus('AUTO-SCAN ACTIVE');}
+  else{clearInterval(autoInt);autoInt=null;toast('Auto-scan OFF');setStatus('SYSTEM OPERATIONAL');}
 }
 
-function focusOffice(id) {
-  const off = OFFICES.find(o => o.id === id);
-  if (off) map.setView(off.latlng, 16, { animate: true });
-}
-
-// ── Clear ──────────────────────────────────────────────────────────────────
-function clearAll() {
-  if (events.length && !confirm('Clear all events from the map?')) return;
-  events = [];
-  renderMap();
-  renderList();
-  updateStatus('SYSTEM OPERATIONAL');
-  showToast('Map cleared');
-}
-
-// ── Copy Briefing ──────────────────────────────────────────────────────────
-function copyBriefing() {
-  const now = new Date().toLocaleString('en-IE', { dateStyle:'full', timeStyle:'short' });
-  let text = `SECMAP SECURITY BRIEFING\n`;
-  text += `${'═'.repeat(48)}\n`;
-  text += `Generated: ${now}\n\n`;
-  text += `FIXED OFFICE LOCATIONS\n`;
-  text += `  A · 5-Hume:      3–8 Hume St, Dublin 2, D02 C624\n`;
-  text += `  B · Styne House: Hatch St Upper, Saint Kevin's, D02 DY27\n\n`;
-
-  if (!events.length) {
-    text += `No active events.\n`;
-  } else {
-    text += `ACTIVE EVENTS (${events.length})\n${'─'.repeat(48)}\n`;
-    events.forEach((ev, i) => {
-      text += `\n${i+1}. ${ev.name.toUpperCase()}`;
-      if (ev.time) text += ` — ${ev.time}`;
-      text += `\n   Location: ${ev.addr}\n`;
-      text += `   Risk radius: ${ev.radius}m\n\n`;
-      OFFICES.forEach(off => {
-        const d = haversine(off.latlng, ev.latlng);
-        const r = getRisk(d);
-        text += `   ${off.label.padEnd(12)}: ${String(d+'m').padEnd(6)} (~${Math.round(d/80)} min walk) — ${r.label}\n`;
-      });
-      if (ev.notes) text += `\n   Notes: ${ev.notes.slice(0, 200)}${ev.notes.length > 200 ? '...' : ''}\n`;
-    });
-  }
-
-  text += `\n${'═'.repeat(48)}\n`;
-  text += `RECOMMENDATION: Avoid all protest areas from 30 min before listed times.\n`;
-  text += `Use Merrion St / Leeson St as alternate exit routes from D2.\n`;
-  text += `Generated by SECMAP · Dublin Security Intelligence`;
-
-  navigator.clipboard.writeText(text)
-    .then(() => showToast('✓ Briefing copied to clipboard'))
-    .catch(() => showToast('⚠ Copy failed — try again'));
-}
-
-// ── Screenshot ─────────────────────────────────────────────────────────────
-function takeScreenshot() {
-  const now = new Date().toLocaleString('en-IE', {dateStyle:'medium', timeStyle:'short'});
-  const evRows = events.map(ev => {
-    const dA = haversine(OFFICES[0].latlng, ev.latlng);
-    const dB = haversine(OFFICES[1].latlng, ev.latlng);
-    const rA = getRisk(dA), rB = getRisk(dB);
-    return '<tr>' +
-      '<td style="padding:8px 12px;border-bottom:1px solid #eee;font-weight:600;">' + ev.name + (ev.time ? ' — '+ev.time : '') + '</td>' +
-      '<td style="padding:8px 12px;border-bottom:1px solid #eee;color:#888;">' + ev.addr + '</td>' +
-      '<td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center;"><span style="background:' + rA.bg + ';color:' + rA.col + ';padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;">' + dA + 'm · ' + rA.label + '</span></td>' +
-      '<td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center;"><span style="background:' + rB.bg + ';color:' + rB.col + ';padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;">' + dB + 'm · ' + rB.label + '</span></td>' +
-      '</tr>';
-  }).join('');
-
-  const notesHtml = events.filter(e=>e.notes).map(e =>
-    '<div style="margin-top:16px;padding:14px 16px;background:#F7F9FC;border-radius:8px;border-left:3px solid #FF5C3A;">' +
-    '<div style="font-family:monospace;font-size:9px;color:#8A9BB0;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:6px;">Intelligence Notes — ' + e.name + '</div>' +
-    '<div style="font-family:monospace;font-size:11px;color:#333;line-height:1.7;">' + e.notes + '</div></div>'
-  ).join('');
-
-  const win = window.open('', '_blank', 'width=920,height=720');
-  win.document.write('<!DOCTYPE html><html><head><title>SECMAP Briefing</title>' +
-    '<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;500&family=Bebas+Neue&display=swap" rel="stylesheet"/>' +
-    '<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Instrument Sans,sans-serif;background:#fff;color:#0D1117;}' +
-    '.hdr{background:#fff;border-bottom:3px solid;border-image:linear-gradient(90deg,#00D4FF,#FF5C3A) 1;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px rgba(0,0,0,0.08);}' +
-    '.logo{font-family:Bebas Neue,sans-serif;font-size:28px;letter-spacing:3px;color:#0D1117;}' +
-    '.sec{padding:22px 32px;}.sec-t{font-family:monospace;font-size:9px;text-transform:uppercase;letter-spacing:2px;color:#8A9BB0;margin-bottom:12px;}' +
-    '.offices{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}' +
-    '.oc{border:2px solid;border-radius:10px;padding:14px 16px;}' +
-    'table{width:100%;border-collapse:collapse;border:1px solid #eee;border-radius:10px;overflow:hidden;}' +
-    'thead{background:#F7F9FC;}th{padding:10px 12px;text-align:left;font-family:monospace;font-size:9px;text-transform:uppercase;letter-spacing:1.5px;color:#8A9BB0;}' +
-    '.ftr{padding:14px 32px;border-top:1px solid #eee;display:flex;justify-content:space-between;align-items:center;}' +
-    '.leg{display:flex;gap:14px;}.leg-i{display:flex;align-items:center;gap:5px;font-size:10px;color:#555;}' +
-    '.leg-d{width:10px;height:10px;border-radius:2px;}' +
-    '.actions{text-align:center;padding:20px;}' +
-    '.pbtn{background:linear-gradient(135deg,#00D4FF,#FF5C3A);color:white;border:none;padding:12px 32px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:1px;}' +
-    '.cbtn{background:#F0F2F5;color:#555;border:none;padding:12px 24px;border-radius:8px;font-size:14px;cursor:pointer;margin-left:10px;}' +
-    '.hint{font-family:monospace;font-size:10px;color:#8A9BB0;margin-top:10px;}' +
-    '@media print{.actions{display:none;}body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}' +
-    '</style></head><body>' +
-    '<div class="hdr"><div><div class="logo">SECMAP</div><div style="font-family:monospace;font-size:10px;color:#8A9BB0;margin-top:2px;letter-spacing:1px;">DUBLIN SECURITY INTELLIGENCE</div></div>' +
-    '<div style="text-align:right;"><div style="font-family:monospace;font-size:11px;font-weight:600;">SECURITY BRIEFING</div><div style="font-family:monospace;font-size:11px;color:#8A9BB0;">' + now + '</div></div></div>' +
-    '<div class="sec"><div class="sec-t">Fixed Office Locations</div>' +
-    '<div class="offices">' +
-    '<div class="oc" style="border-color:#00D4FF;background:rgba(0,212,255,0.04);"><div style="font-size:10px;font-weight:600;color:#00D4FF;letter-spacing:1px;margin-bottom:3px;">OFFICE A</div><div style="font-size:15px;font-weight:700;color:#0088AA;margin-bottom:3px;">5-Hume</div><div style="font-family:monospace;font-size:10px;color:#8A9BB0;">3–8 Hume St, Dublin 2, D02 C624</div></div>' +
-    '<div class="oc" style="border-color:#FF5C3A;background:rgba(255,92,58,0.04);"><div style="font-size:10px;font-weight:600;color:#FF5C3A;letter-spacing:1px;margin-bottom:3px;">OFFICE B</div><div style="font-size:15px;font-weight:700;color:#CC3A1A;margin-bottom:3px;">Styne House</div><div style="font-family:monospace;font-size:10px;color:#8A9BB0;">Hatch St Upper, Saint Kevin's, D02 DY27</div></div>' +
-    '</div>' +
-    '<div class="sec-t">Active Events — Risk Assessment</div>' +
-    (events.length ?
-      '<table><thead><tr><th>Event</th><th>Location</th><th>A · 5-Hume</th><th>B · Styne House</th></tr></thead><tbody>' + evRows + '</tbody></table>' + notesHtml :
-      '<div style="text-align:center;padding:40px;color:#8A9BB0;font-family:monospace;font-size:12px;">No active events</div>') +
-    '</div>' +
-    '<div class="ftr"><div style="font-family:monospace;font-size:10px;color:#8A9BB0;">Avoid protest areas 30 min before listed times · Use Merrion St or Leeson St as alternate routes</div>' +
-    '<div class="leg"><div class="leg-i"><div class="leg-d" style="background:#FF2D55;"></div>Critical</div><div class="leg-i"><div class="leg-d" style="background:#FF9500;"></div>High</div><div class="leg-i"><div class="leg-d" style="background:#34C759;"></div>Moderate</div><div class="leg-i"><div class="leg-d" style="background:#007AFF;"></div>Low</div></div></div>' +
-    '<div class="actions"><button class="pbtn" onclick="window.print()">🖨 Print / Save as PDF</button><button class="cbtn" onclick="window.close()">Close</button><div class="hint">Print → Save as PDF → drag into Slack &nbsp;|&nbsp; or &nbsp;|&nbsp; Win+Shift+S to screenshot this window</div></div>' +
-    '</body></html>');
-  win.document.close();
-  showToast('📋 Briefing opened — print or screenshot');
-}
-
-// ── Pulse animation for event pin ─────────────────────────────────────────
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes pinPulse {
-    0%, 100% { box-shadow: 0 0 24px rgba(255,45,85,0.5); }
-    50%       { box-shadow: 0 0 40px rgba(255,45,85,0.9), 0 0 60px rgba(255,45,85,0.3); }
-  }
-`;
-document.head.appendChild(style);
-
-
-// ── Scan for Nearby Protests ───────────────────────────────────────────────
-async function scanForProtests() {
-  const btn = document.getElementById('scan-btn');
-  const icon = document.getElementById('scan-icon');
-  const label = document.getElementById('scan-label');
-  const wrap = document.getElementById('scan-results-wrap');
-  const results = document.getElementById('scan-results');
-
-  btn.disabled = true;
-  btn.classList.add('scanning');
-  icon.textContent = '◌';
-  label.textContent = 'SCANNING DUBLIN D2...';
-  updateStatus('SCANNING FOR PROTESTS...');
-
-  try {
-    // Search multiple queries targeting D2 protests
-    const queries = [
-      'protest Dublin today 2026',
-      'demonstration Kildare Street Dublin',
-      'march rally Dublin city centre today',
-      'Dublin protest Leinster House 2026'
-    ];
-
-    const searchQuery = queries[Math.floor(Math.random() * queries.length)];
-
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-        system: `You are a security intelligence assistant for a Dublin D2 office security team.
-Your two fixed offices are:
-- Office A (5-Hume): 3-8 Hume Street, Dublin 2 (coords: 53.33475, -6.25590)
-- Office B (Styne House): Hatch Street Upper, Dublin 2 (coords: 53.33170, -6.25750)
-
-Search for protests, demonstrations, marches, or major public events happening TODAY or THIS WEEK near Dublin city centre, especially around D2, Kildare Street, Merrion Square, St Stephen's Green, O'Connell Street.
-
-Return ONLY a JSON array (no markdown, no explanation) like:
-[
-  {
-    "title": "Event name",
-    "location": "Specific street or area in Dublin",
-    "time": "Time if known or null",
-    "summary": "2 sentence summary of what it is and why it matters to office security",
-    "source": "Source name e.g. RTE, TheJournal, Twitter",
-    "url": "Full URL to article or post",
-    "risk": "critical|high|moderate|low"
-  }
-]
-
-If nothing found, return empty array [].
-Today's date: ${new Date().toLocaleDateString('en-IE', {weekday:'long', year:'numeric', month:'long', day:'numeric'})}.`,
-        messages: [{ role: 'user', content: 'Search for protests and public demonstrations happening today or this week near Dublin D2, Kildare Street, and city centre. Find real current events.' }]
+// ─── SCAN ─────────────────────────────────────────────────────────────────
+async function runScan(){
+  const btn=document.getElementById('scan-btn');
+  const icon=document.getElementById('scan-icon');
+  const lbl=document.getElementById('scan-lbl');
+  btn.disabled=true;btn.classList.add('pulsing');
+  icon.textContent='◌';lbl.textContent='SCANNING...';
+  setStatus('SCANNING DUBLIN D2...');
+  try{
+    const today=new Date().toLocaleDateString('en-IE',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',max_tokens:1500,
+        tools:[{type:'web_search_20250305',name:'web_search'}],
+        system:`You are a security intelligence assistant for a Dublin D2 security team. Today is ${today}. Search for protests, demonstrations, marches or major public events happening TODAY or this week near Dublin D2, Kildare Street, Leinster House, St Stephen's Green, Merrion Square, O'Connell Street. Return ONLY a raw JSON array, no markdown: [{"title":"name","location":"street Dublin","time":"HH:MM or null","date":"date or null","summary":"2 sentences on what and security relevance","source":"outlet name","url":"https://url","risk":"critical|high|moderate|low"}]. Empty array [] if nothing found.`,
+        messages:[{role:'user',content:'Search for protests and demonstrations near Dublin D2 today and this week. Include any upcoming planned events.'}]
       })
     });
+    const data=await res.json();
+    let raw='';data.content.forEach(b=>{if(b.type==='text')raw+=b.text;});
+    let found=[];
+    const m=raw.match(/\[[\s\S]*?\]/);
+    if(m){try{found=JSON.parse(m[0]);}catch(e){found=[];}}
+    document.getElementById('dr-ts').textContent='Last scanned: '+new Date().toLocaleTimeString('en-IE',{hour:'2-digit',minute:'2-digit'});
+    const existing=notifs.map(n=>n.title.toLowerCase());
+    const newItems=found.filter(f=>!existing.includes(f.title.toLowerCase()));
+    newItems.forEach(item=>notifs.unshift({...item,id:Date.now()+Math.random(),plotted:false,isNew:true}));
+    if(newItems.length>0&&!drawerOpen){unread+=newItems.length;updateBell();showBanners(newItems);}
+    renderNotifs();
+    setStatus(found.length?`${found.length} EVENT${found.length>1?'S':''} DETECTED`:'SCAN COMPLETE — AREA CLEAR');
+  }catch(e){
+    document.getElementById('dr-ts').textContent='Scan failed — API key required';
+    document.getElementById('dr-list').innerHTML='<div class="dr-empty">⚠ Scan needs API key.<br/>Use Claude.ai to scan manually:<br/>Ask "Search Dublin protests today"<br/>then paste results above.</div>';
+    setStatus('SCAN FAILED — USE CLAUDE.AI',true);
+  }
+  btn.disabled=false;btn.classList.remove('pulsing');
+  icon.textContent='⬡';lbl.textContent='SCAN AGAIN';
+}
 
-    const data = await response.json();
+function showBanners(items){
+  const bc=document.getElementById('banners');
+  items.slice(0,3).forEach(item=>{
+    const rc={critical:'#FF2D55',high:'#FF9500',moderate:'#34C759',low:'#007AFF'}[item.risk]||'#FF9500';
+    const el=document.createElement('div');
+    el.className='banner';el.style.borderColor=rc;el.style.color=rc;
+    el.innerHTML=`🚨 <strong>${item.title}</strong> — ${item.location}${item.time?' at '+item.time:''} &nbsp;·&nbsp; Click to view`;
+    el.onclick=()=>{toggleDrawer();if(el.parentNode)el.parentNode.removeChild(el);};
+    bc.appendChild(el);
+    setTimeout(()=>{if(el.parentNode)el.parentNode.removeChild(el);},9000);
+  });
+}
 
-    // Extract text from response
-    let rawText = '';
-    data.content.forEach(block => {
-      if (block.type === 'text') rawText += block.text;
+function renderNotifs(){
+  const list=document.getElementById('dr-list');
+  if(!notifs.length){list.innerHTML='<div class="dr-empty">⬡<br/>No alerts yet.<br/>Click SCAN NOW to check.</div>';return;}
+  list.innerHTML=notifs.map(n=>{
+    const rc={critical:{c:'#FF2D55',bg:'rgba(255,45,85,.15)'},high:{c:'#FF9500',bg:'rgba(255,149,0,.15)'},moderate:{c:'#34C759',bg:'rgba(52,199,89,.13)'},low:{c:'#007AFF',bg:'rgba(0,122,255,.13)'}}[n.risk||'moderate']||{c:'#34C759',bg:'rgba(52,199,89,.13)'};
+    return `<div class="nc ${n.risk||'mod'}${n.plotted?' plotted':''}" id="nc${n.id}"><button class="nc-dis" onclick="dismissNotif('${n.id}')">✕</button><div class="nc-top">${n.isNew?'<div class="nc-new"></div>':''}<div class="nc-title">${n.title}</div><span class="nc-rtag" style="background:${rc.bg};color:${rc.c}">${(n.risk||'mod').toUpperCase()}</span></div><div class="nc-meta">📍 ${n.location}${n.time?' · ⏱ '+n.time:''}${n.date?' · 📅 '+n.date:''} · ${n.source||'Web'}</div><div class="nc-sum">${n.summary}</div><div class="nc-acts">${n.url&&n.url.startsWith('http')?`<a class="nc-link" href="${n.url}" target="_blank" rel="noopener">↗ Full article</a>`:''}<button class="nc-plot${n.plotted?' done':''}" onclick="plotNotif('${n.id}')">${n.plotted?'✓ Plotted':'📍 Plot on Map'}</button></div></div>`;
+  }).join('');
+}
+
+function dismissNotif(id){notifs=notifs.filter(n=>String(n.id)!==String(id));renderNotifs();}
+
+async function plotNotif(id){
+  const n=notifs.find(n=>String(n.id)===String(id));
+  if(!n||n.plotted)return;
+  const btn=document.querySelector(`#nc${CSS.escape(String(n.id))} .nc-plot`);
+  if(btn){btn.textContent='Plotting...';btn.disabled=true;}
+  try{
+    const ll=await geocode(n.location);
+    const ev={id:Date.now(),name:n.title,addr:n.location,ll,time:n.time||'',rad:n.risk==='critical'?'600':n.risk==='high'?'400':'300',notes:n.summary+(n.url&&n.url.startsWith('http')?'\n\nSource: '+n.url:'')};
+    events.push(ev);n.plotted=true;n.isNew=false;
+    renderMap();renderList();renderNotifs();
+    const all=[...OFFICES.map(o=>o.ll),ll];
+    map.fitBounds([[Math.min(...all.map(p=>p[0]))-0.003,Math.min(...all.map(p=>p[1]))-0.004],[Math.max(...all.map(p=>p[0]))+0.003,Math.max(...all.map(p=>p[1]))+0.004]],{animate:true});
+    setStatus(`${events.length} EVENT${events.length>1?'S':''} ACTIVE`);
+    toast(`✓ ${n.title} plotted on map`);
+  }catch(e){if(btn){btn.textContent='⚠ Not found';btn.disabled=false;}toast('⚠ Could not locate address');}
+}
+
+// ─── BRIEFING WITH MAP SCREENSHOT ─────────────────────────────────────────
+function doBriefing(){
+  const now=new Date().toLocaleString('en-IE',{dateStyle:'medium',timeStyle:'short'});
+  toast('📋 Generating briefing with map...');
+  setStatus('BUILDING BRIEFING...');
+
+  // Draw map to canvas
+  const mapEl=document.getElementById('map');
+  const W=mapEl.offsetWidth,H=mapEl.offsetHeight;
+  const canvas=document.createElement('canvas');
+  const SC=2;canvas.width=W*SC;canvas.height=H*SC;
+  const ctx=canvas.getContext('2d');
+  ctx.scale(SC,SC);
+
+  // Background
+  const g=ctx.createLinearGradient(0,0,W,H);
+  g.addColorStop(0,'#0D1520');g.addColorStop(1,'#06080D');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  // Grid
+  ctx.strokeStyle='rgba(26,38,64,.6)';ctx.lineWidth=.5;
+  for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  // Try to paint tiles
+  const tiles=Array.from(mapEl.querySelectorAll('.leaflet-tile-container img'));
+  const mRect=mapEl.getBoundingClientRect();
+  let done=0;const total=tiles.length;
+
+  function finish(){
+    drawOverlay(ctx,W,H);
+    const url=canvas.toDataURL('image/jpeg',.93);
+    openBriefing(now,url);
+    setStatus(events.length?`${events.length} EVENT${events.length>1?'S':''} ACTIVE`:'SYSTEM OPERATIONAL');
+  }
+
+  if(!total){finish();return;}
+  tiles.forEach(img=>{
+    const r=img.getBoundingClientRect();
+    const x=r.left-mRect.left,y=r.top-mRect.top;
+    const i2=new Image();i2.crossOrigin='anonymous';
+    i2.onload=()=>{try{ctx.drawImage(i2,x,y,r.width,r.height);}catch(e){}if(++done>=total)finish();};
+    i2.onerror=()=>{if(++done>=total)finish();};
+    i2.src=img.src;
+  });
+}
+
+function drawOverlay(ctx,W,H){
+  function lp(lat,lng){const p=map.latLngToContainerPoint([lat,lng]);return{x:p.x,y:p.y};}
+  function m2px(m){const z=map.getZoom(),la=map.getCenter().lat,mpp=156543.03*Math.cos(la*Math.PI/180)/Math.pow(2,z);return m/mpp;}
+
+  // Rings
+  events.forEach(ev=>{
+    const c=lp(ev.ll[0],ev.ll[1]),R=parseInt(ev.rad);
+    const rings=[{r:R,f:'rgba(0,122,255,.12)',s:'#007AFF',w:2},{r:Math.min(R,600),f:'rgba(52,199,89,.18)',s:'#34C759',w:2.5},{r:Math.min(R,350),f:'rgba(255,149,0,.25)',s:'#FF9500',w:3},{r:Math.min(R,150),f:'rgba(255,45,85,.32)',s:'#FF2D55',w:4}];
+    const seen=new Set();
+    rings.filter(r=>{if(seen.has(r.r))return false;seen.add(r.r);return true;}).reverse()
+      .forEach(cfg=>{const rpx=m2px(cfg.r);ctx.beginPath();ctx.arc(c.x,c.y,rpx,0,Math.PI*2);ctx.fillStyle=cfg.f;ctx.fill();ctx.strokeStyle=cfg.s;ctx.lineWidth=cfg.w;ctx.stroke();});
+  });
+
+  // Lines
+  ctx.setLineDash([7,5]);
+  events.forEach(ev=>{
+    const ec=lp(ev.ll[0],ev.ll[1]);
+    OFFICES.forEach(off=>{
+      const oc=lp(off.ll[0],off.ll[1]),d=hav(off.ll,ev.ll),r=risk(d);
+      ctx.beginPath();ctx.moveTo(oc.x,oc.y);ctx.lineTo(ec.x,ec.y);
+      ctx.strokeStyle=off.col+'BB';ctx.lineWidth=2;ctx.stroke();
+      const mx=(oc.x+ec.x)/2,my=(oc.y+ec.y)/2,lbl=off.let+': '+d+'m · '+r.l;
+      ctx.font='bold 10px monospace';const tw=ctx.measureText(lbl).width+16;
+      ctx.setLineDash([]);
+      ctx.fillStyle='rgba(5,7,14,.9)';ctx.beginPath();ctx.roundRect(mx-tw/2,my-11,tw,22,8);ctx.fill();
+      ctx.strokeStyle=r.c;ctx.lineWidth=1;ctx.stroke();
+      ctx.fillStyle=r.c;ctx.textAlign='center';ctx.fillText(lbl,mx,my+5);
+      ctx.setLineDash([7,5]);
     });
+  });
+  ctx.setLineDash([]);
 
-    // Parse JSON
-    let found = [];
-    const jsonMatch = rawText.match(/\[[\s\S]*\]/);
-    if (jsonMatch) {
-      try { found = JSON.parse(jsonMatch[0]); } catch(e) { found = []; }
-    }
+  // Office pins
+  OFFICES.forEach(off=>{
+    const pt=lp(off.ll[0],off.ll[1]);
+    const grd=ctx.createRadialGradient(pt.x,pt.y,6,pt.x,pt.y,28);
+    grd.addColorStop(0,off.col+'55');grd.addColorStop(1,'transparent');
+    ctx.fillStyle=grd;ctx.beginPath();ctx.arc(pt.x,pt.y,28,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=off.col+'30';ctx.beginPath();ctx.arc(pt.x,pt.y,18,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle=off.col;ctx.lineWidth=3;ctx.stroke();
+    ctx.fillStyle=off.col;ctx.font='bold 16px sans-serif';ctx.textAlign='center';ctx.fillText(off.let,pt.x,pt.y+6);
+    const lw=Math.max(ctx.measureText(off.label).width,ctx.measureText(off.full).width)+20;
+    ctx.fillStyle='rgba(5,7,14,.93)';ctx.beginPath();ctx.roundRect(pt.x-lw/2,pt.y+22,lw,36,8);ctx.fill();
+    ctx.strokeStyle=off.col;ctx.lineWidth=1.5;ctx.stroke();
+    ctx.fillStyle=off.col;ctx.fillText(off.label,pt.x,pt.y+36);
+    ctx.fillStyle='rgba(255,255,255,.4)';ctx.font='9px monospace';ctx.fillText(off.full,pt.x,pt.y+50);
+  });
 
-    // Render results
-    wrap.style.display = 'block';
-    document.getElementById('scan-timestamp').textContent =
-      'Last scanned: ' + new Date().toLocaleTimeString('en-IE', {hour:'2-digit', minute:'2-digit'});
+  // Protest pins
+  events.forEach(ev=>{
+    const c=lp(ev.ll[0],ev.ll[1]);
+    ctx.fillStyle='rgba(170,15,35,.9)';ctx.beginPath();ctx.arc(c.x,c.y,16,0,Math.PI*2);ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=2.5;ctx.stroke();
+    ctx.fillStyle='#fff';ctx.font='bold 15px sans-serif';ctx.textAlign='center';ctx.fillText('!',c.x,c.y+6);
+    const nm=ev.name.length>24?ev.name.slice(0,24)+'...':ev.name;
+    ctx.font='bold 11px sans-serif';
+    const lw2=ctx.measureText(nm).width+20;
+    ctx.fillStyle='rgba(5,7,14,.93)';ctx.beginPath();ctx.roundRect(c.x-lw2/2,c.y+20,lw2,ev.time?38:22,8);ctx.fill();
+    ctx.strokeStyle='#FF2D55';ctx.lineWidth=1.5;ctx.stroke();
+    ctx.fillStyle='#FF6B6B';ctx.fillText(nm,c.x,c.y+34);
+    if(ev.time){ctx.fillStyle='#FF2D55';ctx.font='bold 10px monospace';ctx.fillText('⏱ '+ev.time,c.x,c.y+50);}
+  });
 
-    if (!found.length) {
-      results.innerHTML = '<div class="scan-empty">⬡ No protests or major events<br/>detected near D2 right now.<br/>Check again later.</div>';
-    } else {
-      results.innerHTML = found.map((item, i) => {
-        const riskClass = 'risk-' + (item.risk || 'moderate');
-        const riskColors = {
-          critical: {col:'#FF2D55', bg:'rgba(255,45,85,0.15)'},
-          high:     {col:'#FF9500', bg:'rgba(255,149,0,0.15)'},
-          moderate: {col:'#34C759', bg:'rgba(52,199,89,0.13)'},
-          low:      {col:'#007AFF', bg:'rgba(0,122,255,0.13)'}
-        };
-        const rc = riskColors[item.risk] || riskColors.moderate;
-        return '<div class="scan-card ' + riskClass + '">' +
-          '<div class="scan-card-top">' +
-            '<div class="scan-card-title">' + item.title + '</div>' +
-            '<span style="background:' + rc.bg + ';color:' + rc.col + ';padding:2px 7px;border-radius:5px;font-size:9px;font-weight:700;white-space:nowrap;">' + (item.risk||'moderate').toUpperCase() + '</span>' +
-          '</div>' +
-          '<div class="scan-source">📍 ' + item.location + (item.time ? ' · ⏱ ' + item.time : '') + ' · ' + (item.source||'Web') + '</div>' +
-          '<div class="scan-summary">' + item.summary + '</div>' +
-          '<div class="scan-actions">' +
-            (item.url && item.url !== 'null' && item.url.startsWith('http') ?
-              '<a class="scan-link" href="' + item.url + '" target="_blank" rel="noopener">↗ Full article</a>' : '') +
-            '<button class="scan-add-btn" id="scan-add-' + i + '" onclick="addFromScan(' + i + ', this)" data-item=\'\'>+ Add to Map</button>' +
-          '</div>' +
-        '</div>';
-      }).join('');
+  // Legend
+  const lx=W-212,ly=14;
+  ctx.fillStyle='rgba(5,7,14,.93)';ctx.strokeStyle='#1A2640';ctx.lineWidth=1;
+  ctx.beginPath();ctx.roundRect(lx,ly,198,160,10);ctx.fill();ctx.stroke();
+  ctx.fillStyle='#3D5470';ctx.font='8px monospace';ctx.textAlign='left';ctx.fillText('DISRUPTION ZONES',lx+12,ly+18);
+  [['#FF2D55','Critical  0-150m'],['#FF9500','High      150-350m'],['#34C759','Moderate  350-600m'],['#007AFF','Low       600-900m']].forEach(([col,txt],i)=>{
+    const ry=ly+34+i*28;ctx.fillStyle=col;ctx.beginPath();ctx.roundRect(lx+12,ry,14,14,3);ctx.fill();
+    ctx.fillStyle='#C0D4E8';ctx.font='10px monospace';ctx.fillText(txt,lx+32,ry+11);
+  });
+  ctx.fillStyle='#1A2640';ctx.fillRect(lx+12,ly+155,174,1);
+  ctx.fillStyle='#00D4FF';ctx.font='9px monospace';ctx.fillText('A  5-Hume Office',lx+12,ly+148);
+  ctx.fillStyle='#FF5C3A';ctx.fillText('B  Styne House',lx+12,ly+162);
 
-      // Store items for add-to-map
-      window._scanItems = found;
-    }
-
-    updateStatus(found.length ? found.length + ' EVENT' + (found.length>1?'S':'') + ' DETECTED NEARBY' : 'SCAN COMPLETE — AREA CLEAR');
-
-  } catch(err) {
-    wrap.style.display = 'block';
-    results.innerHTML = '<div class="scan-empty">⚠ Scan failed.<br/>Check connection and try again.</div>';
-    updateStatus('SCAN FAILED');
-  }
-
-  btn.disabled = false;
-  btn.classList.remove('scanning');
-  icon.textContent = '⬡';
-  label.textContent = 'SCAN AGAIN';
+  // Title bar
+  ctx.fillStyle='rgba(5,7,14,.85)';ctx.fillRect(0,0,W,32);
+  ctx.fillStyle='#00D4FF';ctx.font='bold 12px monospace';ctx.textAlign='left';
+  ctx.fillText('SECMAP · DUBLIN D2 SECURITY INTELLIGENCE MAP',14,21);
+  ctx.fillStyle='#3D5470';ctx.font='10px monospace';ctx.textAlign='right';
+  ctx.fillText(new Date().toLocaleString('en-IE',{dateStyle:'medium',timeStyle:'short'}),W-14,21);
 }
 
-async function addFromScan(index, btnEl) {
-  if (!window._scanItems || !window._scanItems[index]) return;
-  const item = window._scanItems[index];
-  btnEl.textContent = 'Adding...';
-  btnEl.disabled = true;
+function openBriefing(now,mapUrl){
+  const evRows=events.map(ev=>{
+    const dA=hav(OFFICES[0].ll,ev.ll),dB=hav(OFFICES[1].ll,ev.ll),rA=risk(dA),rB=risk(dB);
+    return `<tr><td style="padding:10px 14px;border-bottom:1px solid #1A2640"><div style="font-weight:600;font-size:12px;color:#E0EAF8">${ev.name}${ev.time?` <span style="color:#FF2D55;font-size:10px">⏱ ${ev.time}</span>`:''}</div><div style="font-size:9px;color:#3D5470;font-family:monospace;margin-top:2px">${ev.addr}</div></td><td style="padding:10px 14px;border-bottom:1px solid #1A2640;text-align:center"><div style="display:inline-block;background:${rA.bg};color:${rA.c};padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;font-family:monospace">${dA}m · ${rA.l}</div></td><td style="padding:10px 14px;border-bottom:1px solid #1A2640;text-align:center"><div style="display:inline-block;background:${rB.bg};color:${rB.c};padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;font-family:monospace">${dB}m · ${rB.l}</div></td><td style="padding:10px 14px;border-bottom:1px solid #1A2640;font-size:9px;color:#8DAAC8;font-family:monospace">${ev.notes?ev.notes.slice(0,80)+(ev.notes.length>80?'...':''):'—'}</td></tr>`;
+  }).join('');
 
-  try {
-    const latlng = await geocode(item.location);
-    const ev = {
-      id: Date.now(),
-      name: item.title,
-      addr: item.location,
-      latlng,
-      time: item.time || '',
-      radius: item.risk === 'critical' ? '600' : item.risk === 'high' ? '400' : '300',
-      notes: item.summary + (item.url && item.url.startsWith('http') ? '\n\nSource: ' + item.url : '')
-    };
-    events.push(ev);
-    renderMap();
-    renderList();
-    btnEl.textContent = '✓ Added';
-    btnEl.classList.add('added');
-    btnEl.disabled = true;
+  const CSS=`*{box-sizing:border-box;margin:0;padding:0}body{background:#05070E;color:#E0EAF8;font-family:'Instrument Sans',sans-serif;min-height:100vh}.hdr{background:#0B0F1A;padding:18px 32px;display:flex;align-items:center;justify-content:space-between;position:relative}.hdr::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#00D4FF,#FF5C3A,#F4A623)}.logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:3px;color:#E0EAF8}.logo span{color:#00D4FF}.body{padding:22px 32px}.st{font-family:'JetBrains Mono',monospace;font-size:8px;color:#3D5470;text-transform:uppercase;letter-spacing:2px;margin:18px 0 10px;padding-bottom:6px;border-bottom:1px solid #1A2640}.st:first-child{margin-top:0}.offices{display:grid;grid-template-columns:1fr 1fr;gap:12px}.oc{border:2px solid;border-radius:10px;padding:14px 16px}table{width:100%;border-collapse:collapse;border:1px solid #1A2640;border-radius:10px;overflow:hidden}thead{background:#0B0F1A}th{padding:10px 14px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:8px;text-transform:uppercase;letter-spacing:1.5px;color:#3D5470}.leg{display:flex;gap:14px;flex-wrap:wrap}.li{display:flex;align-items:center;gap:7px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#8DAAC8}.ld{width:11px;height:11px;border-radius:3px}.recs{list-style:none;border:1px solid #1A2640;border-radius:10px;overflow:hidden}.rec{display:flex;gap:12px;padding:9px 14px;border-bottom:1px solid #1A2640;font-size:12px;background:#101828}.rec:nth-child(even){background:#0D1520}.rec:last-child{border-bottom:none}.rn{font-family:'JetBrains Mono',monospace;font-size:9px;color:#00D4FF;flex-shrink:0;font-weight:700;margin-top:2px}.ftr{padding:14px 32px;border-top:1px solid #1A2640;background:#0B0F1A;display:flex;justify-content:space-between}.ft{font-family:'JetBrains Mono',monospace;font-size:8px;color:#3D5470}.act{text-align:center;padding:22px;background:#08090F;border-top:1px solid #1A2640}.pb{background:linear-gradient(135deg,#00D4FF,#FF5C3A);color:#05070E;border:none;padding:13px 36px;border-radius:9px;font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2px;cursor:pointer;margin-right:10px}.pb:hover{opacity:.9}.cb{background:transparent;color:#8DAAC8;border:1px solid #1A2640;padding:13px 24px;border-radius:9px;font-family:'JetBrains Mono',monospace;font-size:11px;cursor:pointer}.hint{font-family:'JetBrains Mono',monospace;font-size:9px;color:#3D5470;margin-top:10px}@media print{.act{display:none!important}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}`;
 
-    const allPoints = [...OFFICES.map(o=>o.latlng), latlng];
-    map.fitBounds([
-      [Math.min(...allPoints.map(p=>p[0]))-0.003, Math.min(...allPoints.map(p=>p[1]))-0.004],
-      [Math.max(...allPoints.map(p=>p[0]))+0.003, Math.max(...allPoints.map(p=>p[1]))+0.004]
-    ], {animate:true});
+  const html=`<!DOCTYPE html><html><head><title>SECMAP Briefing — ${now}</title><link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;500&family=Bebas+Neue&display=swap" rel="stylesheet"/><style>${CSS}</style></head><body><div class="hdr"><div><div class="logo"><span>SEC</span>MAP</div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#3D5470;letter-spacing:1.5px;margin-top:3px">DUBLIN SECURITY INTELLIGENCE</div></div><div style="text-align:right"><div style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700">SECURITY BRIEFING</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8DAAC8;margin-top:2px">${now}</div></div></div><div class="body"><div class="st" style="margin-top:0">Fixed Office Locations</div><div class="offices"><div class="oc" style="border-color:#00D4FF;background:rgba(0,212,255,.05)"><div style="font-size:9px;font-weight:700;color:#00D4FF;letter-spacing:1px;margin-bottom:3px">OFFICE A</div><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:#00D4FF;margin-bottom:4px">5-HUME</div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#8DAAC8">5 Hume Street, Dublin 2, D02 C624</div></div><div class="oc" style="border-color:#FF5C3A;background:rgba(255,92,58,.05)"><div style="font-size:9px;font-weight:700;color:#FF5C3A;letter-spacing:1px;margin-bottom:3px">OFFICE B</div><div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:#FF5C3A;margin-bottom:4px">STYNE HOUSE</div><div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#8DAAC8">Hatch St Upper, Saint Kevin's, D02 DY27</div></div></div>${events.length?`<div class="st">Active Events — Risk Assessment</div><table><thead><tr><th>Event</th><th style="text-align:center">A · 5-Hume</th><th style="text-align:center">B · Styne House</th><th>Notes</th></tr></thead><tbody>${evRows}</tbody></table>`:''}<div class="st">Situational Map — Live Heatmap View</div><div style="border:1.5px solid #1A2640;border-radius:10px;overflow:hidden;line-height:0"><img src="${mapUrl}" style="width:100%;display:block" alt="SECMAP Live Map"/></div><div style="font-size:9px;color:#3D5470;font-family:'JetBrains Mono',monospace;margin-top:7px;text-align:center">Red=Critical 0-150m · Orange=High 150-350m · Green=Moderate 350-600m · Blue=Low 600-900m · Dashed lines = office distances</div><div class="st">Risk Zone Reference</div><div class="leg"><div class="li"><div class="ld" style="background:#FF2D55"></div>Critical 0–150m — Road closures, Garda control</div><div class="li"><div class="ld" style="background:#FF9500"></div>High 150–350m — Heavy disruption</div><div class="li"><div class="ld" style="background:#34C759"></div>Moderate 350–600m — Both offices here</div><div class="li"><div class="ld" style="background:#007AFF"></div>Low 600–900m — Minor impact</div></div><div class="st">Security Recommendations</div><ul class="recs"><li class="rec"><span class="rn">01</span>Staff departing 16:30–19:00 should avoid Kildare St and Molesworth St.</li><li class="rec"><span class="rn">02</span>Alternate exits: Merrion Street (east) · Leeson Street (south) · Baggot Street (southeast).</li><li class="rec"><span class="rn">03</span>Monitor @GardaTraffic on X for real-time road closure updates.</li><li class="rec"><span class="rn">04</span>Both offices share same disruption zone — one response plan covers both sites.</li><li class="rec"><span class="rn">05</span>Luas Green Line may experience delays at St Stephen's Green stop.</li></ul></div><div class="ftr"><div class="ft">SECMAP · Dublin Security Intelligence · CONFIDENTIAL — SECURITY TEAM USE ONLY</div><div class="ft">${now}</div></div><div class="act"><button class="pb" onclick="window.print()">🖨 PRINT / SAVE AS PDF</button><button class="cb" onclick="window.close()">Close</button><div class="hint">Print → Save as PDF → drag into Slack · or · Win+Shift+S to screenshot this window</div></div></body></html>`;
 
-    showToast('✓ ' + item.title + ' added to map');
-  } catch(e) {
-    btnEl.textContent = '⚠ Not found';
-    btnEl.disabled = false;
-    showToast('⚠ Could not geocode location');
-  }
+  const w=window.open('','_blank','width=1060,height=880');
+  w.document.write(html);w.document.close();
+  toast('✓ Briefing ready — Print to save as PDF');
 }
 
-// ── Init ───────────────────────────────────────────────────────────────────
+// ─── COPY TEXT ────────────────────────────────────────────────────────────
+function copyText(){
+  const now=new Date().toLocaleString('en-IE',{dateStyle:'full',timeStyle:'short'});
+  let t=`SECMAP SECURITY BRIEFING\n${'═'.repeat(46)}\nGenerated: ${now}\n\nFIXED OFFICES\n  A · 5-Hume:      5 Hume St, D02 C624\n  B · Styne House: Hatch St Upper, D02 DY27\n\n`;
+  if(!events.length)t+='No active events.\n';
+  else{
+    t+=`ACTIVE EVENTS (${events.length})\n${'─'.repeat(46)}\n`;
+    events.forEach((ev,i)=>{
+      t+=`\n${i+1}. ${ev.name.toUpperCase()}${ev.time?' — '+ev.time:''}\n   Location: ${ev.addr}\n`;
+      OFFICES.forEach(off=>{const d=hav(off.ll,ev.ll),r=risk(d);t+=`   ${off.label.padEnd(13)}: ${String(d+'m').padEnd(6)} (~${Math.round(d/80)} min walk) — ${r.l}\n`;});
+      if(ev.notes)t+=`\n   Notes: ${ev.notes.slice(0,200)}${ev.notes.length>200?'...':''}\n`;
+    });
+  }
+  t+=`\n${'═'.repeat(46)}\nAvoid protest areas 30 min before listed times.\nAlternate routes: Merrion St · Leeson St · Baggot St\nGenerated by SECMAP · Dublin Security Intelligence`;
+  navigator.clipboard.writeText(t).then(()=>toast('✓ Briefing text copied!')).catch(()=>toast('⚠ Copy failed'));
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
 renderMap();
 renderList();
 </script>
